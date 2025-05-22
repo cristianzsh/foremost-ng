@@ -18,7 +18,7 @@ CR_BASE = /usr/local/cross-tools/i386-mingw32msvc/bin
 # This should be commented out when debugging is done
 #RAW_FLAGS += -D__DEBUG -ggdb
 
-NAME = foremost
+NAME = foremost-ng
 MAN_PAGES = $(NAME).8.gz
 
 RAW_FLAGS += -DVERSION=\"$(VERSION)\"
@@ -109,7 +109,7 @@ cygwin: unix
 #   This section must be updated each time you add an algorithm
 #---------------------------------------------------------------------
 
-foremost: $(OBJ)
+foremost-ng: $(OBJ)
 	$(CC) $(OBJ) -o $(NAME) $(LINK_OPT)
 
 

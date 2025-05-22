@@ -7,6 +7,9 @@
 *.obj
 *.elf
 
+# foremost-ng binary
+foremost-ng
+
 # Linker output
 *.ilk
 *.map

@@ -1,4 +1,3 @@
-
 /* FOREMOST
  *
  * By Jesse Kornblum
@@ -19,12 +18,12 @@
 
 /* Version information is defined in the Makefile */
 
-#define AUTHOR      "Jesse Kornblum, Kris Kendall, and Nick Mikus"
+#define AUTHOR      "Cristian Souza"
 
 /* We use \r\n for newlines as this has to work on Win32. It's redundant for
    everybody else, but shouldn't cause any harm. */
-#define COPYRIGHT   "This program is a work of the US Government. "\
-"In accordance with 17 USC 105,\r\n"\
+#define COPYRIGHT "Original authors: Jesse Kornblum, Kris Kendall, and Nick Mikus\r\n"\
+"This program is a work of the US Government. In accordance with 17 USC 105,\r\n"\
 "copyright protection is not available for any work of the US Government.\r\n"\
 "This is free software; see the source for copying conditions. There is NO\r\n"\
 "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\r\n"

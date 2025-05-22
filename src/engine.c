@@ -1,4 +1,3 @@
-
 	 /* FOREMOST
  *
  * By Jesse Kornblum, Kris Kendall, & Nick Mikus
@@ -13,6 +12,7 @@
  */
 
 #include "main.h"
+#include "ansi_colors.h"
 
 int user_interrupt (f_state * s, f_info * i)
 	{
@@ -590,7 +590,7 @@ int search_stream(f_state *s, f_info *i)
 		f_offset += bytesread;
 		if (!get_mode(s, mode_quiet))
 			{
-			fprintf(stderr, "*");
+			fprintf(stderr, ANSI_YELLOW "*" ANSI_RESET);
 
 			//displayPosition(s,i,f_offset);
 			}
@@ -603,7 +603,7 @@ int search_stream(f_state *s, f_info *i)
 
 	if (!get_mode(s, mode_quiet))
 		{
-		fprintf(stderr, "|\n");
+		fprintf(stderr, ANSI_BOLD ANSI_BLUE "\n[INFO] Processing finished.\n" ANSI_RESET);
 		}
 
 #ifdef DEBUG
@@ -624,7 +624,7 @@ void audit_start(f_state *s, f_info *i)
 {
 	if (!get_mode(s, mode_quiet))
 		{
-		fprintf(stderr, "Processing: %s\n|", i->file_name);
+		fprintf(stderr, ANSI_BOLD ANSI_BLUE "[INFO] Processing: %s\n" ANSI_RESET, i->file_name);
 		}
 
 	audit_msg(s, FOREMOST_DIVIDER);

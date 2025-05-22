@@ -1,5 +1,3 @@
-
-
 #include "main.h"
 
 int initialize_state (f_state * s, int argc, char **argv)
@@ -135,10 +133,10 @@ void set_block(f_state *s, int size)
 
 void write_audit_header(f_state *s)
 {
-	audit_msg(s, "Foremost version %s by %s", VERSION, AUTHOR);
+	audit_msg(s, "foremost-ng version %s by %s", VERSION, AUTHOR);
 	audit_msg(s, "Audit File");
 	audit_msg(s, "");
-	audit_msg(s, "Foremost started at %s", get_start_time(s));
+	audit_msg(s, "foremost-ng started at %s", get_start_time(s));
 	audit_msg(s, "Invocation: %s", get_invocation(s));
 	audit_msg(s, "Output directory: %s", get_output_directory(s));
 	audit_msg(s, "Configuration file: %s", get_config_file(s));

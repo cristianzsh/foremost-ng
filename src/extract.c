@@ -1,4 +1,3 @@
-
 	 /* extract.c
  * Copyright (c) 2005, Nick Mikus
  * This file contains the file specific functions used to extract

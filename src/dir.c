@@ -1,6 +1,5 @@
-
-
 #include "main.h"
+#include "ansi_colors.h"
 
 int is_empty_directory (DIR * temp)
 	{
@@ -131,7 +130,7 @@ int create_output_directory(f_state *s)
 		/* The directory exists already. It MUST be empty for us to continue */
 		if (!is_empty_directory(d))
 			{
-			printf("ERROR: %s is not empty\n \tPlease specify another directory or run with -T.\n",
+			printf(ANSI_BOLD ANSI_RED "[ERROR] " ANSI_RESET "%s is not empty\n \tPlease specify another directory or run with -T.\n",
 				   get_output_directory(s));
 
 			exit(EXIT_FAILURE);

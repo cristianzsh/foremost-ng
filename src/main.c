@@ -1,6 +1,3 @@
-
-
-
 /* FOREMOST
  *
  * By Jesse Kornblum and Kris Kendall
@@ -15,6 +12,7 @@
  *
  */
 #include "main.h"
+#include "ansi_colors.h"
 
 struct DIRECTORY *dirlist = NULL;
 struct DIRECTORY *dl = NULL;
@@ -67,38 +65,26 @@ void try_msg(void)
    on a single screen */
 void usage(void)
 {
-	fprintf(stderr, "%s version %s by %s.%s", __progname, VERSION, AUTHOR, NEWLINE);
-	fprintf(stderr,
-			"%s %s [-v|-V|-h|-T|-Q|-q|-a|-w-d] [-t <type>] [-s <blocks>] [-k <size>] \n\t[-b <size>] [-c <file>] [-o <dir>] [-i <file] %s%s",
+	fprintf(stderr, ANSI_BOLD ANSI_CYAN "%s version %s by %s.%s" ANSI_RESET, __progname, VERSION, AUTHOR, NEWLINE);
+	fprintf(stderr, ANSI_YELLOW
+			"%s %s [-v|-V|-h|-T|-Q|-q|-a|-w-d] [-t <type>] [-s <blocks>] [-k <size>] \n\t[-b <size>] [-c <file>] [-o <dir>] [-i <file] %s%s" ANSI_RESET,
 		CMD_PROMPT,
 			__progname,
 			NEWLINE,
 			NEWLINE);
-	fprintf(stderr, "-V  - display copyright information and exit%s", NEWLINE);
-	fprintf(stderr, "-t  - specify file type.  (-t jpeg,pdf ...) %s", NEWLINE);
-	fprintf(stderr, "-d  - turn on indirect block detection (for UNIX file-systems) %s", NEWLINE);
-	fprintf(stderr, "-i  - specify input file (default is stdin) %s", NEWLINE);
-	fprintf(stderr,
-			"-a  - Write all headers, perform no error detection (corrupted files) %s",
-			NEWLINE);
-	fprintf(stderr,
-			"-w  - Only write the audit file, do not write any detected files to the disk %s",
-			NEWLINE);
-	fprintf(stderr,
-			"-o  - set output directory (defaults to %s)%s",
-			DEFAULT_OUTPUT_DIRECTORY,
-			NEWLINE);
-	fprintf(stderr,
-			"-c  - set configuration file to use (defaults to %s)%s",
-			DEFAULT_CONFIG_FILE,
-			NEWLINE);
-	fprintf(stderr,
-			"-q  - enables quick mode. Search are performed on 512 byte boundaries.%s",
-			NEWLINE);
-	fprintf(stderr, "-Q  - enables quiet mode. Suppress output messages. %s", NEWLINE);
 
-	/* RBF - What should verbose mode be? */
-	fprintf(stderr, "-v  - verbose mode. Logs all messages to screen%s", NEWLINE);
+	fprintf(stderr, ANSI_GREEN "Options:\n" ANSI_RESET);
+	fprintf(stderr, "  " ANSI_CYAN "-V" ANSI_RESET "  Display copyright information and exit.\n");
+	fprintf(stderr, "  " ANSI_CYAN "-t" ANSI_RESET "  Specify file type (e.g., jpeg,pdf).\n");
+	fprintf(stderr, "  " ANSI_CYAN "-d" ANSI_RESET "  Turn on indirect block detection (for UNIX file-systems).\n");
+	fprintf(stderr, "  " ANSI_CYAN "-i" ANSI_RESET "  Specify input file (default is stdin).\n");
+	fprintf(stderr, "  " ANSI_CYAN "-a" ANSI_RESET "  Write all headers, perform no error detection (corrupted files).\n");
+	fprintf(stderr, "  " ANSI_CYAN "-w" ANSI_RESET "  Only write the audit file, do not write any detected files to the disk.\n");
+	fprintf(stderr, "  " ANSI_CYAN "-o" ANSI_RESET "  Set output directory (defaults to %s).\n", DEFAULT_OUTPUT_DIRECTORY);
+	fprintf(stderr, "  " ANSI_CYAN "-c" ANSI_RESET "  Set configuration file to use (defaults to %s).\n", DEFAULT_CONFIG_FILE);
+	fprintf(stderr, "  " ANSI_CYAN "-q" ANSI_RESET "  Enables quick mode. Search are performed on 512 byte boundaries.\n");
+	fprintf(stderr, "  " ANSI_CYAN "-Q" ANSI_RESET "  Enables quiet mode. Suppress output messages.\n");
+	fprintf(stderr, "  " ANSI_CYAN "-v" ANSI_RESET "  Verbose mode. Logs all messages to screen.\n");
 }
 
 void process_command_line(int argc, char **argv, f_state *s)
@@ -231,7 +217,6 @@ void process_command_line(int argc, char **argv, f_state *s)
 
 int main(int argc, char **argv)
 {
-
 	FILE	*testFile = NULL;
 	f_state *s = (f_state *)malloc(sizeof(f_state));
 	int		input_files = 0;
@@ -241,6 +226,13 @@ int main(int argc, char **argv)
 #ifndef __GLIBC__
 	__progname = basename(argv[0]);
 #endif
+
+	/* if no arguments given, show usage */
+	if (argc < 2)
+	{
+		usage();
+		return EXIT_SUCCESS;
+	}
 
 	/*Initialize the global state struct*/
 	if (initialize_state(s, argc, argv))

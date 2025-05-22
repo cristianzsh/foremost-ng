@@ -1,5 +1,3 @@
-
-
 #include "main.h"
 
 void fatal_error (f_state * s, char *msg)
