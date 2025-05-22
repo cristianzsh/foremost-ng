@@ -3,6 +3,9 @@
 `foremost-ng` is a Linux-based file recovery tool that extracts files from disk images or devices by scanning for configurable file headers and footers. It supports common forensic formats (e.g., `.dd`, Safeback, Encase) and can operate on both image files and live devices.
 > ⚡ This fork aims to modernize the codebase, improve terminal output with ANSI styling, and introduce new features for forensic analysis and data recovery.
 
+<img src="screenshots/foremost-ng-01.png"/>
+<img src="screenshots/foremost-ng-02.png"/>
+
 ---
 
 ## Features
