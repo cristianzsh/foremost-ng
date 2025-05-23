@@ -15,6 +15,7 @@
  */
 
 #include "main.h"
+#include <stdlib.h>
 #include "ansi_colors.h"
 
 struct DIRECTORY *dirlist = NULL;
@@ -22,13 +23,33 @@ struct DIRECTORY *dl = NULL;
 char wildcard = 0;
 s_spec search_spec[50];
 int signal_caught = 0;
-
-#ifdef __WIN32
-
-/* Allows us to open standard input in binary mode by default 
-   See http://gnuwin32.sourceforge.net/compile.html for more */
-int _CRT_fmode = _O_BINARY;
+#ifdef _WIN32
+char *__progname = NULL;
 #endif
+
+#ifdef _WIN32
+#include <windows.h>
+void enable_virtual_terminal_processing() {
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD dwMode = 0;
+	if (hOut != INVALID_HANDLE_VALUE &&
+		GetConsoleMode(hOut, &dwMode)) {
+		dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	SetConsoleMode(hOut, dwMode);
+		}
+}
+#endif
+
+char *my_basename(char *path) {
+	if (!path || !*path) return (char *)"";
+
+	char *base = strrchr(path, '/');
+	#ifdef _WIN32
+	char *alt = strrchr(path, '\\');
+	if (alt && (!base || alt > base)) base = alt;
+	#endif
+	return base ? base + 1 : path;
+}
 
 void catch_alarm(int signum)
 {
@@ -225,9 +246,12 @@ int main(int argc, char **argv)
 	int		input_files = 0;
 	char	**temp = argv;
 	DIR* 	dir;
+#ifdef _WIN32
+	enable_virtual_terminal_processing();
+#endif
 
 #ifndef __GLIBC__
-	__progname = basename(argv[0]);
+	__progname = my_basename(argv[0]);
 #endif
 
 	/* if no arguments given, show usage */

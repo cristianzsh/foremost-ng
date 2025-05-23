@@ -13,8 +13,8 @@
 #define FAT_START		0x4c
 #define OUR_BLK_SIZE	512
 #define DIRS_PER_BLK	4
-#ifndef __CYGWIN
-	#define MIN(x, y)	((x) < (y) ? (x) : (y))
+#ifndef MIN
+	#define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
 #include <stdarg.h>
@@ -31,12 +31,12 @@ struct OLE_HDR
 {
 	char			magic[8];				/*0*/
 	char			clsid[16];				/*8*/
-       __U16_TYPE      uMinorVersion;                  /*24*/
-       __U16_TYPE      uDllVersion;                    /*26*/
-       __U16_TYPE      uByteOrder;                             /*28*/
-       __U16_TYPE      uSectorShift;                   /*30*/
-       __U16_TYPE      uMiniSectorShift;               /*32*/
-       __U16_TYPE      reserved;                               /*34*/
+       uint16_t      uMinorVersion;                  /*24*/
+       uint16_t      uDllVersion;                    /*26*/
+       uint16_t      uByteOrder;                             /*28*/
+       uint16_t      uSectorShift;                   /*30*/
+       uint16_t      uMiniSectorShift;               /*32*/
+       uint16_t      reserved;                               /*34*/
        u_int32_t       reserved1;                              /*36*/
        u_int32_t       reserved2;                              /*40*/
        u_int32_t       num_FAT_blocks;                 /*44*/

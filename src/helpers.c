@@ -12,6 +12,19 @@
  */
 
 #include "main.h"
+#include <string.h>
+#include <inttypes.h>
+
+/*char *my_basename(char *path) {
+	if (!path || !*path) return (char *)"";
+
+	char *base = strrchr(path, '/');
+	#ifdef _WIN32
+	char *alt = strrchr(path, '\\');
+	if (alt && (!base || alt > base)) base = alt;
+	#endif
+	return base ? base + 1 : path;
+}*/
 
 /* Removes any newlines at the end of the string buf.
    Works for both *nix and Windows styles of newlines.
@@ -71,7 +84,7 @@ char *human_readable(off_t size, char *buffer)
 		}
 	else if (sizeof(off_t) == 8)
 		{
-		snprintf(buffer, 8, "%llu %s", (u_int64_t) size, units(count));
+		snprintf(buffer, 8, "%" PRIu64 " %s", (uint64_t) size, units(count));
 		}
 
 	return buffer;
@@ -324,12 +337,12 @@ void print_search_specs(f_state *s)
 	printf("\nDUMPING BUILTIN SEARCH INFO\n\t");
 	for (i = 0; i < s->num_builtin; i++)
 		{
+		printf("%s:\n\t footer_len:=%d, header_len:=%d, max_len:=%" PRIu64 " ",
+		search_spec[i].suffix,
+		search_spec[i].footer_len,
+		search_spec[i].header_len,
+		search_spec[i].max_len);
 
-		printf("%s:\n\t footer_len:=%d, header_len:=%d, max_len:=%llu ",
-			   search_spec[i].suffix,
-			   search_spec[i].footer_len,
-			   search_spec[i].header_len,
-			   search_spec[i].max_len);
 		printf("\n\t header:\t");
 		printx(search_spec[i].header, 0, search_spec[i].header_len);
 		printf("\t footer:\t");
@@ -472,11 +485,11 @@ unsigned int htoi(unsigned char s[], int endian)
 	return size;
 }
 
-u_int64_t htoll(unsigned char s[], int endian)
+uint64_t htoll(unsigned char s[], int endian)
 {
-	int				length = sizeof(u_int64_t);
+	int				length = sizeof(uint64_t);
 	unsigned char	*bytes = (unsigned char *)malloc(length * sizeof(char));
-	u_int64_t	size = 0;
+	uint64_t	size = 0;
 	bytes = memcpy(bytes, s, length);
 #ifdef DEBUG
 	printf("htoll len=%d endian=%d\n",length,endian);
@@ -496,7 +509,7 @@ u_int64_t htoll(unsigned char s[], int endian)
 		bytes = (unsigned char *)reverse_string((char *)bytes, (char *)s, 0, length);
 		}
 
-	size = *((u_int64_t *)bytes);
+	size = *((uint64_t *)bytes);
 #ifdef DEBUG
 	printf("htoll size=%llu\n",size);
 	printx(bytes,0,length);
@@ -508,7 +521,7 @@ u_int64_t htoll(unsigned char s[], int endian)
 }
 
 /* display Position: Tell the user how far through the infile we are */
-int displayPosition(f_state *s, f_info *i, u_int64_t pos)
+int displayPosition(f_state *s, f_info *i, uint64_t pos)
 {
 
 	int			percentDone = 0;

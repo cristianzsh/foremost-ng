@@ -15,6 +15,8 @@
 #include "main.h"
 #include "extract.h"
 #include "ole.h"
+#include <inttypes.h>
+
 extern unsigned char buffer[OUR_BLK_SIZE];
 extern int	verbose;
 extern int	dir_count;
@@ -31,16 +33,16 @@ extern int	highblk;
     until we reach the EOF.
  *Return: A pointer to where the EOF of the ZIP is in the current buffer
 **********************************************************************************/
-unsigned char *extract_zip(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset, char *type)
+unsigned char *extract_zip(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset, char *type)
 {
 	unsigned char				*currentpos = NULL;
 	unsigned char				*buf = foundat;
 	unsigned short				comment_length = 0;
 	unsigned char				*extractbuf = NULL;
 	struct zipLocalFileHeader	localFH;
-	u_int64_t					bytes_to_search = 50 * KILOBYTE;
-	u_int64_t					file_size = 0;
+	uint64_t					bytes_to_search = 50 * KILOBYTE;
+	uint64_t					file_size = 0;
 	int							oOffice = FALSE;
 	int							office2007 = FALSE;
 
@@ -285,8 +287,8 @@ unsigned char *extract_zip(f_state *s, u_int64_t c_offset, unsigned char *founda
     grab the file size and we are done, else search for the %%EOF
 *Return: A pointer to where the EOF of the PDF is in the current buffer
 **********************************************************************************/
-unsigned char *extract_pdf(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_pdf(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 	unsigned char		*currentpos = NULL;
 	unsigned char		*buf = foundat;
@@ -455,8 +457,8 @@ unsigned char *extract_pdf(f_state *s, u_int64_t c_offset, unsigned char *founda
  *Description: Use keywords to attempt to find C/C++ source code
 *Return: A pointer to where the EOF of the CPP file is in the current buffer
 **********************************************************************************/
-unsigned char *extract_cpp(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_cpp(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 
 	unsigned char	*header = foundat;
@@ -548,8 +550,8 @@ unsigned char *extract_cpp(f_state *s, u_int64_t c_offset, unsigned char *founda
     search for the file EOF and check that the bytes areound the header are ascii
 *Return: A pointer to where the EOF of the HTM is in the current buffer
 **********************************************************************************/
-unsigned char *extract_htm(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_htm(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 	unsigned char	*buf = foundat;
 	unsigned char	*extractbuf = NULL;
@@ -711,8 +713,8 @@ int adjust_bs(int size, int bs)
     determine what type of file it is.
 *Return: A pointer to where the EOF of the OLE is in the current buffer
 **********************************************************************************/
-unsigned char *extract_ole(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset, char *type)
+unsigned char *extract_ole(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset, char *type)
 {
 	unsigned char	*buf = foundat;
 	unsigned char	*extractbuf = NULL;
@@ -1035,8 +1037,8 @@ int check_mov(unsigned char *atom)
     until we reach EOF
 *Return: A pointer to where the EOF of the MOV is in the current buffer
 **********************************************************************************/
-unsigned char *extract_mov(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_mov(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 	unsigned char	*buf = foundat - 4;
 	unsigned char	*extractbuf = NULL;
@@ -1144,8 +1146,8 @@ unsigned char *extract_mov(f_state *s, u_int64_t c_offset, unsigned char *founda
     search for the file header and grab the file size.
 *Return: A pointer to where the EOF of the WMV is in the current buffer
 **********************************************************************************/
-unsigned char *extract_wmv(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_wmv(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 
 	//unsigned char	*currentpos = NULL;
@@ -1153,14 +1155,14 @@ unsigned char *extract_wmv(f_state *s, u_int64_t c_offset, unsigned char *founda
 	unsigned char	*extractbuf = NULL;
 	unsigned char	*buf = foundat;
 	unsigned int		size = 0;
-	u_int64_t		file_size = 0;
-	u_int64_t			headerSize = 0;
+	uint64_t		file_size = 0;
+	uint64_t			headerSize = 0;
 	int				numberofHeaderObjects = 0;
 	int				reserved[2];
 	int				bytes_to_search = 0;
 
 #ifdef DEBUG
-	u_int64_t			fileObjHeaderSize = 0;
+	uint64_t			fileObjHeaderSize = 0;
 #endif
 
 	/*If we have less than a WMV header bail out*/
@@ -1184,7 +1186,8 @@ unsigned char *extract_wmv(f_state *s, u_int64_t c_offset, unsigned char *founda
 
 	if (headerSize <= 0 || numberofHeaderObjects <= 0 || reserved[0] != 1)
 		{
-		printf("WMV err num_header_objs=%d headerSize=%llu\n",numberofHeaderObjects,headerSize);
+		printf("WMV err num_header_objs=%d headerSize=%" PRIu64 "\n",
+			   numberofHeaderObjects, (uint64_t)headerSize);
 		return foundat;
 		}
 
@@ -1252,13 +1255,13 @@ unsigned char *extract_wmv(f_state *s, u_int64_t c_offset, unsigned char *founda
  *Description: Given that we have a RIFF header parse header and grab the file size.
  *Return: A pointer to where the EOF of the RIFF is in the current buffer
  **********************************************************************************/
-unsigned char *extract_riff(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-							s_spec *needle, u_int64_t f_offset, char *type)
+unsigned char *extract_riff(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+							s_spec *needle, uint64_t f_offset, char *type)
 {
 	unsigned char	*buf = foundat;
 	unsigned char	*extractbuf = NULL;
 	int				size = 0;
-	u_int64_t		file_size = 0;
+	uint64_t		file_size = 0;
 
 	size = htoi(&foundat[4], FOREMOST_LITTLE_ENDIAN);		/* Grab the total file size in little endian from offset 4*/
 	if (strncmp((char *) &foundat[8], "AVI", 3) == 0)		/*Sanity Check*/
@@ -1324,8 +1327,8 @@ unsigned char *extract_riff(f_state *s, u_int64_t c_offset, unsigned char *found
  *Description: Given that we have a BMP header parse header and grab the file size.
  *Return: A pointer to where the EOF of the BMP is in the current buffer
  **********************************************************************************/
-unsigned char *extract_bmp(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_bmp(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 	unsigned char	*buf = foundat;
 	int				size = 0;
@@ -1333,7 +1336,7 @@ unsigned char *extract_bmp(f_state *s, u_int64_t c_offset, unsigned char *founda
 	int				v_size = 0;
 	int				h_size = 0;
 	unsigned char	*extractbuf = NULL;
-	u_int64_t		file_size = 0;
+	uint64_t		file_size = 0;
 	char			comment[32];
 	int				dataOffset = 0;
 	int				dataSize = 0;
@@ -1403,8 +1406,8 @@ unsigned char *extract_bmp(f_state *s, u_int64_t c_offset, unsigned char *founda
  *	where the file ends.
  *Return: A pointer to where the EOF of the GIF is in the current buffer
  **********************************************************************************/
-unsigned char *extract_gif(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_gif(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 	unsigned char	*buf = foundat;
 	//unsigned char	*currentpos = foundat;
@@ -1412,7 +1415,7 @@ unsigned char *extract_gif(f_state *s, u_int64_t c_offset, unsigned char *founda
 	int				bytes_to_search = 0;
 	unsigned short	width = 0;
 	unsigned short	height = 0;
-	u_int64_t		file_size = 0;
+	uint64_t		file_size = 0;
 	char			comment[32];
 	foundat += 4;		/*Jump the first 4 bytes of the gif header (GIF8)*/
 
@@ -1469,8 +1472,8 @@ unsigned char *extract_gif(f_state *s, u_int64_t c_offset, unsigned char *founda
  *Function: extract_mpg
  * Not done yet
  **********************************************************************************/
-unsigned char *extract_mpg(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_mpg(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 	unsigned char	*buf = foundat;
 	unsigned char	*currentpos = NULL;
@@ -1478,7 +1481,7 @@ unsigned char *extract_mpg(f_state *s, u_int64_t c_offset, unsigned char *founda
 	unsigned char	*extractbuf = NULL;
 	int				bytes_to_search = 0;
 	unsigned short	size = 0;
-	u_int64_t		file_size = 0;
+	uint64_t		file_size = 0;
 
 	/*
     size=htos(&foundat[4],FOREMOST_BIG_ENDIAN);
@@ -1659,14 +1662,14 @@ unsigned char *extract_mpg(f_state *s, u_int64_t c_offset, unsigned char *founda
  *Function: extract_mp4
  * Not done yet
  **********************************************************************************/
-unsigned char *extract_mp4(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_mp4(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 	unsigned char	*buf = foundat;
 
 	unsigned char	*extractbuf = NULL;
 	unsigned int	size = 0;
-	u_int64_t		file_size = 0;
+	uint64_t		file_size = 0;
 
    
 	while(1)
@@ -1734,8 +1737,8 @@ unsigned char *extract_mp4(f_state *s, u_int64_t c_offset, unsigned char *founda
  *	where the file ends.
  *Return: A pointer to where the EOF of the PNG is in the current buffer
  **********************************************************************************/
-unsigned char *extract_png(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_png(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 	unsigned char	*buf = foundat;
 	unsigned char	*currentpos = NULL;
@@ -1744,7 +1747,7 @@ unsigned char *extract_png(f_state *s, u_int64_t c_offset, unsigned char *founda
 	int				size = 0;
 	int				height = 0;
 	int				width = 0;
-	u_int64_t		file_size = 0;
+	uint64_t		file_size = 0;
 	char			comment[32];
 
 	if (buflen < 100)
@@ -1825,8 +1828,8 @@ unsigned char *extract_png(f_state *s, u_int64_t c_offset, unsigned char *founda
  *	where the file ends.
  *Return: A pointer to where the EOF of the JPEG is in the current buffer
  **********************************************************************************/
-unsigned char *extract_jpeg(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-							s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_jpeg(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+							s_spec *needle, uint64_t f_offset)
 {
 	unsigned char	*buf = foundat;
 	//unsigned char	*currentpos = NULL;
@@ -1836,7 +1839,7 @@ unsigned char *extract_jpeg(f_state *s, u_int64_t c_offset, unsigned char *found
 	int				bytes_to_search = 0;
 	int				hasTable = FALSE;
 	int				hasHuffman = FALSE;
-	u_int64_t		file_size = 0;
+	uint64_t		file_size = 0;
 
 	// char comment[32];
 
@@ -1960,15 +1963,15 @@ unsigned char *extract_jpeg(f_state *s, u_int64_t c_offset, unsigned char *found
  *Description:
  *Return: A pointer to where the EOF of the
  **********************************************************************************/
-unsigned char *extract_generic(f_state *s, u_int64_t c_offset, unsigned char *foundat,
-							   u_int64_t buflen, s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_generic(f_state *s, uint64_t c_offset, unsigned char *foundat,
+							   uint64_t buflen, s_spec *needle, uint64_t f_offset)
 {
 	unsigned char	*buf = foundat;
 	unsigned char	*endptr = foundat;
 	unsigned char	*beginptr = foundat;
 	unsigned char	*extractbuf = NULL;
 	int		bytes_to_search = 0;
-	u_int64_t	file_size = 0;
+	uint64_t	file_size = 0;
 	int begin=0;
 	int end=0;
 	
@@ -2095,12 +2098,12 @@ unsigned char *extract_generic(f_state *s, u_int64_t c_offset, unsigned char *fo
  *Description:
  *Return: A pointer to where the EOF of the
  **********************************************************************************/
-unsigned char *extract_exe(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_exe(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 	unsigned char	*buf = foundat;
 	unsigned char	*extractbuf = NULL;
-	u_int64_t		file_size = 0;
+	uint64_t		file_size = 0;
 	unsigned short	pe_offset = 0;
 	//unsigned int	SizeOfCode = 0;
 	//unsigned int	SizeOfInitializedData = 0;
@@ -2245,8 +2248,8 @@ unsigned char *extract_exe(f_state *s, u_int64_t c_offset, unsigned char *founda
  *Description:
  *Return: A pointer to where the EOF of the
  **********************************************************************************/
-unsigned char *extract_reg(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_reg(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 	unsigned char	*buf = foundat;
 	unsigned char	*extractbuf = NULL;
@@ -2272,12 +2275,12 @@ unsigned char *extract_reg(f_state *s, u_int64_t c_offset, unsigned char *founda
  *Description:
  *Return: A pointer to where the EOF of the
  **********************************************************************************/
-unsigned char *extract_rar(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-						   s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_rar(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+						   s_spec *needle, uint64_t f_offset)
 {
 	unsigned char	*buf = foundat;
 	unsigned char	*extractbuf = NULL;
-	//u_int64_t		file_size = 0;
+	//uint64_t		file_size = 0;
 	unsigned short	headersize = 0;
 	unsigned short	flags = 0;
 	unsigned int	filesize = 0;
@@ -2287,7 +2290,7 @@ unsigned char *extract_rar(f_state *s, u_int64_t c_offset, unsigned char *founda
 	int				scan = 0;
 	int				flag = 0;
 	int				passwd = 0;
-	u_int64_t		bytes_to_search = 50 * KILOBYTE;
+	uint64_t		bytes_to_search = 50 * KILOBYTE;
 	char			comment[32];
 
 	/*Marker Block*/
@@ -2449,8 +2452,8 @@ unsigned char *extract_rar(f_state *s, u_int64_t c_offset, unsigned char *founda
 	return NULL;
 }
 
-unsigned char *extract_file(f_state *s, u_int64_t c_offset, unsigned char *foundat, u_int64_t buflen,
-							s_spec *needle, u_int64_t f_offset)
+unsigned char *extract_file(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+							s_spec *needle, uint64_t f_offset)
 {
 	if (needle->type == JPEG)
 		{

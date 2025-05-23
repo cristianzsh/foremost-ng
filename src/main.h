@@ -45,6 +45,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 /* For va_arg */
 #include <stdarg.h>
@@ -161,9 +163,9 @@ off_t ftello(FILE *stream);
 #define ftello   ftell
 #define fseeko   fseek
 
-#ifndef __CYGWIN
-#define  snprintf         _snprintf
-#endif
+//#ifndef __CYGWIN
+//#define  snprintf         _snprintf
+//#endif
 
 #define  u_int32_t        unsigned long
 
@@ -171,17 +173,31 @@ off_t ftello(FILE *stream);
    No worries about lstat to stat; Windows doesn't have symbolic links */
 #define lstat(A,B)      stat(A,B)
 
-#define u_int64_t unsigned __int64
+//#define u_int64_t unsigned __int64
 
-#ifndef __CYGWIN
-	#define realpath(A,B)   _fullpath(B,A,PATH_MAX) 
+#ifdef _WIN32
+    #include <stdlib.h>
+    #include <limits.h>
+    #define realpath(A, B) _fullpath(B, A, PATH_MAX)
+#else
+    #include <stdlib.h>
+    #include <limits.h>
 #endif
-/* Not used in md5deep anymore, but left in here in case I 
+
+#ifdef _WIN32
+    #include <direct.h>
+    #define mkdir(path, mode) _mkdir(path)
+#else
+    #include <sys/stat.h>
+#endif
+
+
+/* Not used in md5deep anymore, but left in here in case I
    ever need it again. Win32 documentation searches are evil.
    int asprintf(char **strp, const char *fmt, ...);
 */
 
-char *basename(char *a);
+char *my_basename(char *path);
 extern char *optarg;
 extern int optind;
 int getopt(int argc, char *const argv[], const char *optstring);
@@ -190,11 +206,11 @@ int getopt(int argc, char *const argv[], const char *optstring);
 
 
 /* On non-glibc systems we have to manually set the __progname variable */
-#ifdef __GLIBC__
+//#ifdef __GLIBC__
 extern char *__progname;
-#else
-char *__progname;
-#endif /* ifdef __GLIBC__ */
+//#else
+//char *__progname;
+//#endif /* ifdef __GLIBC__ */
 
 /* -----------------------------------------------------------------
    Program Defaults
@@ -327,7 +343,7 @@ typedef struct s_spec
 {
     char* suffix;
     int type;
-    u_int64_t max_len;
+    uint64_t max_len;
     unsigned char* header;
     unsigned int header_len;
     size_t header_bm_table[UCHAR_MAX+1];
@@ -396,7 +412,7 @@ int get_audit_file_open(f_state *s);
 void set_mode(f_state *s, off_t new_mode);
 int get_mode(f_state *s, off_t check_mode);
 
-int set_search_def(f_state *s,char* ft,u_int64_t max_file_size);
+int set_search_def(f_state *s, char *ft, uint64_t max_file_size);
 void get_search_def(f_state s);
 
 void set_input_file(f_state *s,char* filename);
@@ -422,7 +438,7 @@ int close_audit_file(f_state *s);
 
 /* Set up our output directory */
 int create_output_directory(f_state *s);
-int write_to_disk(f_state *s,s_spec * needle,u_int64_t len,unsigned char* buf,  u_int64_t t_offset);
+int write_to_disk(f_state *s,s_spec * needle,uint64_t len,unsigned char* buf,  uint64_t t_offset);
 int create_sub_dirs(f_state *s);
 void cleanup_output(f_state *s);
 
@@ -442,8 +458,8 @@ int charactersMatch(char a, char b, int caseSensitive);
 void printx(unsigned char* buf,int start, int end);
 unsigned short htos(unsigned char s[],int endian);
 unsigned int htoi(unsigned char s[],int endian);
-u_int64_t htoll(unsigned char s[],int endian);
-int displayPosition(f_state* s,f_info* i,u_int64_t pos);
+uint64_t htoll(unsigned char s[],int endian);
+int displayPosition(f_state* s,f_info* i,uint64_t pos);
 
 
 /* Interface functions 
@@ -464,7 +480,7 @@ unsigned char *bm_search_skipn(unsigned char *needle, size_t needle_len,unsigned
 #endif /* __FOREMOST_H */
 
 /* BUILTIN */
-unsigned char* extract_file(f_state *s,  u_int64_t c_offset,unsigned char *foundat,  u_int64_t buflen, s_spec * needle, u_int64_t f_offset);
+unsigned char* extract_file(f_state *s,  uint64_t c_offset,unsigned char *foundat,  uint64_t buflen, s_spec * needle, uint64_t f_offset);
 
 
 

@@ -206,7 +206,7 @@ void set_input_file(f_state *s, char *filename)
 
 /*Initialize any search specs*/
 int init_builtin(f_state *s, int type, char *suffix, char *header, char *footer, int header_len,
-				 int footer_len, u_int64_t max_len, int case_sen)
+				 int footer_len, uint64_t max_len, int case_sen)
 {
 
 	int i = s->num_builtin;
@@ -344,7 +344,7 @@ void init_all(f_state *state)
 }
 
 /*Process any command line args following the -t switch)*/
-int set_search_def(f_state *s, char *ft, u_int64_t max_file_size)
+int set_search_def(f_state *s, char *ft, uint64_t max_file_size)
 {
 	int index = 0;
 

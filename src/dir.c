@@ -1,5 +1,6 @@
 #include "main.h"
 #include "ansi_colors.h"
+#include <inttypes.h>
 
 int is_empty_directory (DIR * temp)
 	{
@@ -46,40 +47,40 @@ void cleanup_output(f_state *s)
 
 }
 
+#include <errno.h>    // for errno and EEXIST
+#include <string.h>   // for strerror
+#ifdef _WIN32
+	#include <direct.h> // for _mkdir
+#else
+	#include <sys/stat.h> // for mode_t and mkdir
+#endif
+
 int make_new_directory(f_state *s, char *fn)
 {
-
-#ifdef __WIN32
-
-	#ifndef __CYGWIN
-fprintf(stderr,"Calling mkdir with\n");
-	if (mkdir(fn))
-	#endif
-
+#ifdef _WIN32
+	if (_mkdir(fn) != 0)
+	{
 #else
-		mode_t	new_mode =
-			(
-				S_IRUSR |
-				S_IWUSR |
-				S_IXUSR |
-				S_IRGRP |
-				S_IWGRP |
-				S_IXGRP |
-				S_IROTH |
-				S_IWOTH
-			);
-	if (mkdir(fn, new_mode))
-#endif
+		mode_t new_mode = (
+			S_IRUSR | S_IWUSR | S_IXUSR |   // User: read, write, execute
+			S_IRGRP | S_IWGRP | S_IXGRP |   // Group: read, write, execute
+			S_IROTH | S_IWOTH               // Others: read, write
+		);
+
+		if (mkdir(fn, new_mode) != 0)
 		{
-		if (errno != EEXIST)
+#endif
+			if (errno != EEXIST)
 			{
-			print_error(s, fn, strerror(errno));
-			return TRUE;
+				print_error(s, fn, strerror(errno));
+				return TRUE;
 			}
 		}
 
-	return FALSE;
-}
+		return FALSE;
+	}
+
+
 
 /*Clean the timestamped dir name to make it a little more file system friendly*/
 char *clean_time_string(char *time)
@@ -307,7 +308,7 @@ int create_sub_dirs(f_state *s)
 }
 
 /*We have found a file so write to disk*/
-int write_to_disk(f_state *s, s_spec *needle, u_int64_t len, unsigned char *buf, u_int64_t t_offset)
+int write_to_disk(f_state *s, s_spec *needle, uint64_t len, unsigned char *buf, uint64_t t_offset)
 {
 
 	char		fn[MAX_STRING_LENGTH];
@@ -315,7 +316,7 @@ int write_to_disk(f_state *s, s_spec *needle, u_int64_t len, unsigned char *buf,
 	FILE		*test;
 	long		byteswritten = 0;
 	char		temp[32];
-	u_int64_t	block = ((t_offset) / s->block_size);
+	uint64_t	block = ((t_offset) / s->block_size);
 	int			i = 1;
 
 	//Name files based on their block offset
@@ -340,13 +341,13 @@ int write_to_disk(f_state *s, s_spec *needle, u_int64_t len, unsigned char *buf,
 		}
 
 	snprintf(fn,
-			 MAX_STRING_LENGTH,
-			 "%s/%s/%0*llu.%s",
-			 s->output_directory,
-			 needle->suffix,
-			 8,
-			 block,
-			 needle->suffix);
+		MAX_STRING_LENGTH,
+		"%s/%s/%0*" PRIu64 ".%s",
+		s->output_directory,
+		needle->suffix,
+		8,
+		(uint64_t)block,
+		needle->suffix);
 
 	test = fopen(fn, "rb");
 	while (test)	/*Test the files to make sure we have unique file names, some headers could be within the same block*/
@@ -354,13 +355,14 @@ int write_to_disk(f_state *s, s_spec *needle, u_int64_t len, unsigned char *buf,
 		memset(fn, 0, MAX_STRING_LENGTH - 1);
 		snprintf(fn,
 				 MAX_STRING_LENGTH - 1,
-				 "%s/%s/%0*llu_%d.%s",
-				 s->output_directory,
-				 needle->suffix,
-				 8,
-				 block,
-				 i,
-				 needle->suffix);
+				"%s/%s/%0*" PRIu64 "_%d.%s",
+				s->output_directory,
+				needle->suffix,
+				8,
+				(uint64_t)block,
+				i,
+				needle->suffix);
+
 		i++;
 		fclose(test);
 		test = fopen(fn, "rb");

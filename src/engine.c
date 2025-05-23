@@ -41,10 +41,10 @@ int user_interrupt (f_state * s, f_info * i)
 	return FALSE;
 	}
 
-unsigned char *read_from_disk(u_int64_t offset, f_info *i, u_int64_t length)
+unsigned char *read_from_disk(uint64_t offset, f_info *i, uint64_t length)
 {
 
-	u_int64_t		bytesread = 0;
+	uint64_t		bytesread = 0;
 	unsigned char	*newbuf = (unsigned char *)malloc(length * sizeof(char));
 	if (!newbuf) {
            fprintf(stderr, "Ran out of memory in read_from_disk()\n");
@@ -158,12 +158,12 @@ unsigned char *bm_search(unsigned char *needle, size_t needle_len, unsigned char
 void setup_stream(f_state *s, f_info *i)
 {
 	char	buffer[MAX_STRING_LENGTH];
-	u_int64_t	skip = (((u_int64_t) s->skip) * ((u_int64_t) s->block_size));
+	uint64_t	skip = (((uint64_t) s->skip) * ((uint64_t) s->block_size));
 #ifdef DEBUG
 	printf("s->skip=%d s->block_size=%d total=%llu\n",
 		   s->skip,
 		   s->block_size,
-		   (((u_int64_t) s->skip) * ((u_int64_t) s->block_size)));
+		   (((uint64_t) s->skip) * ((uint64_t) s->block_size)));
 #endif
 	i->bytes_read = 0;
 	i->total_megs = i->total_bytes / ONE_MEGABYTE;
@@ -234,7 +234,7 @@ void dumpInd(unsigned char *ind, int bs)
  *	block
  *Return: TRUE/FALSE
  **********************************************************************************/
-int ind_block(unsigned char *foundat, u_int64_t buflen, int bs)
+int ind_block(unsigned char *foundat, uint64_t buflen, int bs)
 {
 
 	unsigned char	*temp = foundat;
@@ -322,22 +322,22 @@ int ind_block(unsigned char *foundat, u_int64_t buflen, int bs)
  *Description: Analyze the given chunk by running each defined search spec on it
  *Return: TRUE/FALSE
  **********************************************************************************/
-int search_chunk(f_state *s, unsigned char *buf, f_info *i, u_int64_t chunk_size, u_int64_t f_offset)
+int search_chunk(f_state *s, unsigned char *buf, f_info *i, uint64_t chunk_size, uint64_t f_offset)
 {
 
-	u_int64_t		c_offset = 0;
-	//u_int64_t               foundat_off = 0;
-	//u_int64_t               buf_off = 0;
+	uint64_t		c_offset = 0;
+	//uint64_t               foundat_off = 0;
+	//uint64_t               buf_off = 0;
 
 	unsigned char	*foundat = buf;
 	//unsigned char	*current_pos = NULL;
 	unsigned char	*header_pos = NULL;
 	unsigned char	*newbuf = NULL;
 	unsigned char	*ind_ptr = NULL;
-	u_int64_t		current_buflen = chunk_size;
+	uint64_t		current_buflen = chunk_size;
 	int				tryBS[3] = { 4096, 1024, 512 };
 	unsigned char	*extractbuf = NULL;
-	u_int64_t		file_size = 0;
+	uint64_t		file_size = 0;
 	s_spec			*needle = NULL;
 	int				j = 0;
 	int				bs = 0;
@@ -373,7 +373,7 @@ int search_chunk(f_state *s, unsigned char *buf, f_info *i, u_int64_t chunk_size
 #ifdef DEBUG
 			//foundat_off=foundat;
 			//buf_off=buf;
-			//printf("current buf:=%llu (foundat-buf)=%llu \n", current_buflen, (u_int64_t) (foundat_off - buf_off));
+			//printf("current buf:=%llu (foundat-buf)=%llu \n", current_buflen, (uint64_t) (foundat_off - buf_off));
 #endif
 			if (signal_caught == SIGTERM || signal_caught == SIGINT)
 				{
@@ -576,9 +576,9 @@ int search_chunk(f_state *s, unsigned char *buf, f_info *i, u_int64_t chunk_size
  **********************************************************************************/
 int search_stream(f_state *s, f_info *i)
 {
-	u_int64_t		bytesread = 0;
-	u_int64_t		f_offset = 0;
-	u_int64_t		chunk_size = ((u_int64_t) s->chunk_size) * MEGABYTE;
+	uint64_t		bytesread = 0;
+	uint64_t		f_offset = 0;
+	uint64_t		chunk_size = ((uint64_t) s->chunk_size) * MEGABYTE;
 	unsigned char	*buf = (unsigned char *)malloc(sizeof(char) * chunk_size);
 
 	setup_stream(s, i);
