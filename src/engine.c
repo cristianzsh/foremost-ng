@@ -34,9 +34,9 @@ int user_interrupt (f_state * s, f_info * i)
 
 	/* RBF - Write user_interrupt */
 	fclose(i->handle);
+	cleanup_output(s);
 	free(s);
 	free(i);
-	cleanup_output(s);
 	exit(-1);
 	return FALSE;
 	}
@@ -330,7 +330,7 @@ int search_chunk(f_state *s, unsigned char *buf, f_info *i, u_int64_t chunk_size
 	//u_int64_t               buf_off = 0;
 
 	unsigned char	*foundat = buf;
-	unsigned char	*current_pos = NULL;
+	//unsigned char	*current_pos = NULL;
 	unsigned char	*header_pos = NULL;
 	unsigned char	*newbuf = NULL;
 	unsigned char	*ind_ptr = NULL;
@@ -475,7 +475,7 @@ int search_chunk(f_state *s, unsigned char *buf, f_info *i, u_int64_t chunk_size
 				}
 
 				c_offset = (foundat - buf);
-				current_pos = foundat;
+				//current_pos = foundat;
 
 				/*Now lets analyze the file and see if we can determine its size*/
 
@@ -525,7 +525,7 @@ int search_chunk(f_state *s, unsigned char *buf, f_info *i, u_int64_t chunk_size
 						newbuf = read_from_disk(c_offset + f_offset, i, needle->max_len);
 						if (newbuf == NULL)
 							break;
-						current_pos = extract_file(s,
+						extract_file(s,
 												   c_offset,
 												   newbuf,
 												   needle->max_len,
@@ -604,10 +604,9 @@ int search_stream(f_state *s, f_info *i)
 		f_offset += bytesread;
 		if (!get_mode(s, mode_quiet))
 			{
-			//fprintf(stderr, ANSI_YELLOW "*" ANSI_RESET);
+				//fprintf(stderr, ANSI_YELLOW "*" ANSI_RESET);
 				print_sliding_bar();
-
-			//displayPosition(s,i,f_offset);
+				//displayPosition(s,i,f_offset);
 			}
 
 		/*FIX ME***

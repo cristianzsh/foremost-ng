@@ -323,7 +323,7 @@ int write_to_disk(f_state *s, s_spec *needle, u_int64_t len, unsigned char *buf,
 
 	if (get_mode(s, mode_write_audit))
 		{
-		if (needle->comment == NULL)
+		if (needle->comment[0] == '\0')
 			strcpy(needle->comment, " ");
 
 		audit_msg(s,
@@ -383,7 +383,7 @@ int write_to_disk(f_state *s, s_spec *needle, u_int64_t len, unsigned char *buf,
 		fatal_error(s, "Error closing file\n");
 		}
 
-	if (needle->comment == NULL)
+	if (needle->comment[0] == '\0')
 		strcpy(needle->comment, " ");
 	
 	if (i == 1) {

@@ -168,7 +168,7 @@ int get_dir_info(unsigned char *src)
 			return FALSE;
 		}
 
-		if (dl->name == NULL)
+		if (dl->name[0] == '\0')
 		{
 #ifdef DEBUG
 			printf("	***NULL dir name. bailing out \n");
@@ -478,7 +478,7 @@ int dump_dirent(int which_one)
 {
 	int				i;
 	char			*p;
-	short			unknown;
+	//short			unknown;
 	struct OLE_DIR	*dir;
 
 	dir = (struct OLE_DIR *) &buffer[which_one * sizeof(struct OLE_DIR)];
@@ -493,7 +493,7 @@ int dump_dirent(int which_one)
 	p = dir->name;
 	if (*p < ' ')
 		{
-		unknown = *((short *)p);
+		//unknown = *((short *)p);
 
 		//fprintf (stderr, "%04x\t", unknown);
 		p += 2; /* step over unknown short */

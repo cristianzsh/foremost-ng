@@ -138,12 +138,13 @@ unsigned char *extract_zip(f_state *s, u_int64_t c_offset, unsigned char *founda
 					{	
 						needle->suffix = "xlsx";
 					}
-					
-					
+
 				else
 					{
-						//printf("foundat=%s\n",foundat);
-					}	
+#ifdef DEBUG
+						printf("foundat=%s\n",foundat);
+#endif
+					}
 				}
 
 			foundat += localFH.compressed;
@@ -152,7 +153,7 @@ unsigned char *extract_zip(f_state *s, u_int64_t c_offset, unsigned char *founda
 			
 			if (localFH.genFlag == 8)
 				{
-#ifdef DEBUG	
+#ifdef DEBUG
 					fprintf(stderr,"We have extra stuff!!!");
 #endif
 				}
@@ -552,7 +553,7 @@ unsigned char *extract_htm(f_state *s, u_int64_t c_offset, unsigned char *founda
 {
 	unsigned char	*buf = foundat;
 	unsigned char	*extractbuf = NULL;
-	unsigned char	*currentpos = NULL;
+	//unsigned char	*currentpos = NULL;
 
 	int				bytes_to_search = 0;
 	int				i = 0;
@@ -581,7 +582,7 @@ unsigned char *extract_htm(f_state *s, u_int64_t c_offset, unsigned char *founda
 		}
 
 	/*Store the current position and search for the HTML> tag*/
-	currentpos = foundat;
+	//currentpos = foundat;
 	foundat = bm_search(needle->footer,
 						needle->footer_len,
 						foundat,
@@ -718,7 +719,6 @@ unsigned char *extract_ole(f_state *s, u_int64_t c_offset, unsigned char *founda
 	char			*temp = NULL;
 	char			*suffix = "ole";
 	int				totalsize = 0;
-	int				extrasize = 0;
 	int				oldblk = 0;
 	int				i, j;
 	int				size = 0;
@@ -738,6 +738,10 @@ unsigned char *extract_ole(f_state *s, u_int64_t c_offset, unsigned char *founda
 	int				highblock = 0;
 	unsigned long	miniSectorCutoff = 0;
 	unsigned long	csectMiniFat = 0;
+
+#ifdef DEBUG
+	int				extrasize = 0;
+#endif
 
 	/*Deal with globals defined in the OLE API, ugly*/
 	if (dirlist != NULL)
@@ -914,7 +918,7 @@ unsigned char *extract_ole(f_state *s, u_int64_t c_offset, unsigned char *founda
 				}
 
 #ifdef DEBUG
-			fprintf(stdout, buffer);
+			fprintf(stdout, "%s", (char *)buffer);
 #endif
 			}
 		else
@@ -922,11 +926,9 @@ unsigned char *extract_ole(f_state *s, u_int64_t c_offset, unsigned char *founda
 			sprintf((char *) &buffer[j], "\n");
 #ifdef DEBUG
 			printf("\tnot stream data \n");
-			fprintf(stdout, buffer);
-#endif
-
+			fprintf(stdout, "%s", (char *)buffer);
 			extrasize += adjust_bs(dl->size, 512);
-
+#endif
 			}
 		}
 
@@ -1146,17 +1148,20 @@ unsigned char *extract_wmv(f_state *s, u_int64_t c_offset, unsigned char *founda
 						   s_spec *needle, u_int64_t f_offset)
 {
 
-	unsigned char	*currentpos = NULL;
+	//unsigned char	*currentpos = NULL;
 	unsigned char	*header = foundat;
 	unsigned char	*extractbuf = NULL;
 	unsigned char	*buf = foundat;
 	unsigned int		size = 0;
 	u_int64_t		file_size = 0;
 	u_int64_t			headerSize = 0;
-	u_int64_t			fileObjHeaderSize = 0;
 	int				numberofHeaderObjects = 0;
 	int				reserved[2];
 	int				bytes_to_search = 0;
+
+#ifdef DEBUG
+	u_int64_t			fileObjHeaderSize = 0;
+#endif
 
 	/*If we have less than a WMV header bail out*/
 	if (buflen < 70)
@@ -1183,7 +1188,7 @@ unsigned char *extract_wmv(f_state *s, u_int64_t c_offset, unsigned char *founda
 		return foundat;
 		}
 
-	currentpos = foundat;
+	//currentpos = foundat;
 	if (buflen - (foundat - buf) >= needle->max_len)
 		bytes_to_search = needle->max_len;
 	else
@@ -1200,7 +1205,9 @@ unsigned char *extract_wmv(f_state *s, u_int64_t c_offset, unsigned char *founda
 	if (foundat)
 		{
 		foundat += 16;	/*jump to the headersize*/
+#ifdef DEBUG
 		fileObjHeaderSize = htoll(foundat, FOREMOST_LITTLE_ENDIAN);
+#endif
 		//printx(foundat,0,8);
 		foundat += 24;	//Jump to the file size obj
 		size = htoi(foundat, FOREMOST_LITTLE_ENDIAN);
@@ -1220,12 +1227,12 @@ unsigned char *extract_wmv(f_state *s, u_int64_t c_offset, unsigned char *founda
 		{
 		header += size;
 #ifdef DEBUG
-		printf("	Found a WMV at:=%lld,File size:=%lld\n", c_offset, size);
-		printf("	Headersize:=%d, numberofHeaderObjects:= %d ,reserved:=%d,%d\n",
-			   headerSize,
-			   numberofHeaderObjects,
-			   reserved[0],
-			   reserved[1]);
+		printf("        Found a WMV at:=%lld,File size:=%u\n", (long long)c_offset, size);
+		printf("	Headersize:=%llu, numberofHeaderObjects:= %d ,reserved:=%d,%d\n",
+       (unsigned long long)headerSize,
+       numberofHeaderObjects,
+       reserved[0],
+       reserved[1]);
 #endif
 
 		/*Everything seem ok, write to disk*/
@@ -1400,7 +1407,7 @@ unsigned char *extract_gif(f_state *s, u_int64_t c_offset, unsigned char *founda
 						   s_spec *needle, u_int64_t f_offset)
 {
 	unsigned char	*buf = foundat;
-	unsigned char	*currentpos = foundat;
+	//unsigned char	*currentpos = foundat;
 	unsigned char	*extractbuf = NULL;
 	int				bytes_to_search = 0;
 	unsigned short	width = 0;
@@ -1419,7 +1426,7 @@ unsigned char *extract_gif(f_state *s, u_int64_t c_offset, unsigned char *founda
 		sprintf(comment, " (%d x %d)", width, height);
 		strcat(needle->comment, comment);
 
-		currentpos = foundat;
+		//currentpos = foundat;
 		if (buflen - (foundat - buf) >= needle->max_len)
 			bytes_to_search = needle->max_len;
 		else
@@ -1480,7 +1487,9 @@ unsigned char *extract_mpg(f_state *s, u_int64_t c_offset, unsigned char *founda
     printx(foundat,0,16);
     foundat+=4;
     */
+#ifdef DEBUG
 	int				j = 0;
+#endif
 	if (foundat[15] == (unsigned char)'\xBB')
 		{
 		}
@@ -1501,9 +1510,9 @@ unsigned char *extract_mpg(f_state *s, u_int64_t c_offset, unsigned char *founda
 
 	while (1)
 		{
-		j = 0;
 		currentpos = foundat;
 #ifdef DEBUG
+		j = 0;
 		printf("Searching for marker\n");
 #endif
 		foundat = bm_search(needle->markerlist[0].value,
@@ -1517,7 +1526,7 @@ unsigned char *extract_mpg(f_state *s, u_int64_t c_offset, unsigned char *founda
 		if (foundat)
 		{
 #ifdef DEBUG
-			printf("Found after searching %d\n", foundat - currentpos);
+			printf("Found after searching %ld\n", foundat - currentpos);
 #endif
 			while (1)
 				{
@@ -1561,8 +1570,8 @@ unsigned char *extract_mpg(f_state *s, u_int64_t c_offset, unsigned char *founda
 					foundat += size + 6;
 #ifdef DEBUG
 					printx(foundat, 0, 16);
-#endif
 					j++;
+#endif
 				}
 				else
 					{
@@ -1765,7 +1774,7 @@ unsigned char *extract_png(f_state *s, u_int64_t c_offset, unsigned char *founda
 		if (size <= 0 || size > buflen - (foundat - buf))
 		{
 #ifdef DEBUG
-			printf("buflen - (foundat-buf)=%lu\n", buflen - (foundat - buf));
+			printf("buflen - (foundat-buf)=%llu\n", (unsigned long long)(buflen - (foundat - buf)));
 #endif
 			return currentpos;
 		}
@@ -1820,7 +1829,7 @@ unsigned char *extract_jpeg(f_state *s, u_int64_t c_offset, unsigned char *found
 							s_spec *needle, u_int64_t f_offset)
 {
 	unsigned char	*buf = foundat;
-	unsigned char	*currentpos = NULL;
+	//unsigned char	*currentpos = NULL;
 
 	unsigned char	*extractbuf = NULL;
 	unsigned short	headersize;
@@ -1898,7 +1907,7 @@ unsigned char *extract_jpeg(f_state *s, u_int64_t c_offset, unsigned char *found
 		return buf + needle->header_len;
 	}
 
-	currentpos = foundat;
+	//currentpos = foundat;
 
 	//sprintf("Searching for footer\n");
 	if (buflen < (foundat - buf)) {
@@ -2093,24 +2102,24 @@ unsigned char *extract_exe(f_state *s, u_int64_t c_offset, unsigned char *founda
 	unsigned char	*extractbuf = NULL;
 	u_int64_t		file_size = 0;
 	unsigned short	pe_offset = 0;
-	unsigned int	SizeOfCode = 0;
-	unsigned int	SizeOfInitializedData = 0;
-	unsigned int	SizeOfUninitializedData = 0;
-	unsigned int	rva = 0;
+	//unsigned int	SizeOfCode = 0;
+	//unsigned int	SizeOfInitializedData = 0;
+	//unsigned int	SizeOfUninitializedData = 0;
+	//unsigned int	rva = 0;
 	unsigned int	offset = 0;
 	unsigned short	sections = 0;
-	unsigned int	sizeofimage = 0;
+	//unsigned int	sizeofimage = 0;
 	unsigned int	raw_section_size = 0;
-	unsigned int	size_of_headers = 0;
+	//unsigned int	size_of_headers = 0;
 	unsigned short	dll = 0;
 	unsigned int	sum = 0;
 	unsigned short	exe_char = 0;
-	unsigned int	align = 0;
+	//unsigned int	align = 0;
 	int				i = 0;
 	time_t			compile_time = 0;
 	struct tm		*ret_time;
-	char			comment[32];
-	char			ascii_time[32];
+	char			comment[80];
+	char			ascii_time[80];
 
 	if (buflen < 100)
 		return foundat + 2;
@@ -2134,14 +2143,14 @@ unsigned char *extract_exe(f_state *s, u_int64_t c_offset, unsigned char *founda
 
 	compile_time = (time_t) htoi(&foundat[8], FOREMOST_LITTLE_ENDIAN);
 	ret_time = gmtime(&compile_time);
-	sprintf(ascii_time,
-			"%02d/%02d/%04d %02d:%02d:%02d",
-			ret_time->tm_mon + 1,
-			ret_time->tm_mday,
-			ret_time->tm_year + 1900,
-			ret_time->tm_hour,
-			ret_time->tm_min,
-			ret_time->tm_sec);
+	snprintf(ascii_time, sizeof(ascii_time),
+         "%02d/%02d/%04d %02d:%02d:%02d",
+         ret_time->tm_mon + 1,
+         ret_time->tm_mday,
+         ret_time->tm_year + 1900,
+         ret_time->tm_hour,
+         ret_time->tm_min,
+         ret_time->tm_sec);
 	chop(ascii_time);
 
 	sprintf(comment, "%s", ascii_time);
@@ -2168,14 +2177,14 @@ unsigned char *extract_exe(f_state *s, u_int64_t c_offset, unsigned char *founda
 
 	foundat += 0x18;	/*Jump to opt header should be 0x0b 0x01*/
 
-	SizeOfCode = htoi(&foundat[4], FOREMOST_LITTLE_ENDIAN);
-	SizeOfInitializedData = htoi(&foundat[8], FOREMOST_LITTLE_ENDIAN);
-	SizeOfUninitializedData = htoi(&foundat[12], FOREMOST_LITTLE_ENDIAN);
-	rva = htoi(&foundat[16], FOREMOST_LITTLE_ENDIAN);
-	align = htoi(&foundat[36], FOREMOST_LITTLE_ENDIAN);
+	//SizeOfCode = htoi(&foundat[4], FOREMOST_LITTLE_ENDIAN);
+	//SizeOfInitializedData = htoi(&foundat[8], FOREMOST_LITTLE_ENDIAN);
+	//SizeOfUninitializedData = htoi(&foundat[12], FOREMOST_LITTLE_ENDIAN);
+	//rva = htoi(&foundat[16], FOREMOST_LITTLE_ENDIAN);
+	//align = htoi(&foundat[36], FOREMOST_LITTLE_ENDIAN);
 
-	sizeofimage = htoi(&foundat[56], FOREMOST_LITTLE_ENDIAN);
-	size_of_headers = htoi(&foundat[60], FOREMOST_LITTLE_ENDIAN);
+	//sizeofimage = htoi(&foundat[56], FOREMOST_LITTLE_ENDIAN);
+	//size_of_headers = htoi(&foundat[60], FOREMOST_LITTLE_ENDIAN);
 	foundat += 224;
 
 	/*Start of sections*/
@@ -2268,7 +2277,7 @@ unsigned char *extract_rar(f_state *s, u_int64_t c_offset, unsigned char *founda
 {
 	unsigned char	*buf = foundat;
 	unsigned char	*extractbuf = NULL;
-	u_int64_t		file_size = 0;
+	//u_int64_t		file_size = 0;
 	unsigned short	headersize = 0;
 	unsigned short	flags = 0;
 	unsigned int	filesize = 0;
@@ -2425,8 +2434,8 @@ unsigned char *extract_rar(f_state *s, u_int64_t c_offset, unsigned char *founda
 
 		/*We found the EOF, write the file to disk and return*/
 		tot_file_size = (foundat - buf);
-		if (tot_file_size > buflen)
-			file_size = buflen;
+		//if (tot_file_size > buflen)
+		//	file_size = buflen;
 
 		extractbuf = buf;
 		write_to_disk(s, needle, tot_file_size, extractbuf, c_offset + f_offset);

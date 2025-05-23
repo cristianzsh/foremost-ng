@@ -282,7 +282,7 @@ int main(int argc, char **argv)
 			fclose(testFile);
 			dir = opendir(*argv);
 			
-			if(!strstr(s->config_file,*argv)!=0 && !dir)
+			if (strstr(s->config_file, *argv) == NULL && !dir)
 			{
 				input_files++;
 			}
@@ -308,12 +308,12 @@ int main(int argc, char **argv)
 			{
 				fclose(testFile);
 				dir = opendir(*argv);
-				if(!strstr(s->config_file,*argv)!=0 && !dir)
+				if (strstr(s->config_file, *argv) == NULL && !dir)
 				{
 					set_input_file(s, *argv);
 					process_file(s);
 				}
-				if(dir) closedir(dir);	
+				if(dir) closedir(dir);
 			}
 
 		++argv;
