@@ -1,5 +1,4 @@
-
-	 /* MD5DEEP - helpers.c
+/* MD5DEEP - helpers.c
  *
  * By Jesse Kornblum
  *

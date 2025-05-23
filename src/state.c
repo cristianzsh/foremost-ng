@@ -300,7 +300,7 @@ void init_all(f_state *state)
 				 ZIP,
 				 "zip",
 				 "\x50\x4B\x03\x04",
-				 "\x4b\x05\x06\x00",
+				 "\x50\x4b\x05\x06",
 				 4,
 				 4,
 				 100 * MEGABYTE,

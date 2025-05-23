@@ -1,5 +1,3 @@
-
-
 #include "main.h"
 
 int translate (char *str)
@@ -187,6 +185,16 @@ int process_line(f_state *s, char *buffer, int line_number)
 	char	**tokenarray = (char **)malloc(6 * sizeof(char[MAX_STRING_LENGTH]));
 	int		i = 0, len = strlen(buffer);
 
+	if (len == MAX_STRING_LENGTH - 1)
+	{
+		if (!(buffer[len -1] == '\n') || !(buffer[len - 2] == 0x0d && buffer[len - 1] == 0x0a))
+		{
+			fprintf(stderr, "\nERROR: Foremost does not support lines longer than %d. Check line %d.\n", MAX_STRING_LENGTH, line_number);
+			return FALSE;
+		}
+	}
+
+
 	/* Any line that ends with a CTRL-M (0x0d) has been processed
    by a DOS editor. We will chop the CTRL-M to ignore it */
 	if (buffer[len - 2] == 0x0d && buffer[len - 1] == 0x0a)
@@ -257,6 +265,12 @@ int process_line(f_state *s, char *buffer, int line_number)
 			return TRUE;
 
 		}
+
+	if (s->num_builtin >= MAX_BUILTIN)
+	{
+		fprintf(stderr, "\nERROR: Reached maximum amount of entries. Line: %d. Maximum: %d\n", line_number, MAX_BUILTIN);
+		return FALSE;
+	}
 
 	if (!extractSearchSpecData(s, tokenarray))
 		{

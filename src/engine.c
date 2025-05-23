@@ -1,9 +1,12 @@
-	 /* FOREMOST
+/* FOREMOST-NG
  *
- * By Jesse Kornblum, Kris Kendall, & Nick Mikus
+ * Originally developed as FOREMOST by Jesse Kornblum, Kris Kendall, & Nick Mikus
  *
  * This is a work of the US Government. In accordance with 17 USC 105,
  * copyright protection is not available for any work of the US Government.
+ *
+ * This version, named "foremost-ng", has been modified and extended by Cristian Souza
+ * to modernize the codebase and introduce new features.
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,6 +16,17 @@
 
 #include "main.h"
 #include "ansi_colors.h"
+
+void print_sliding_bar() {
+    static int frame = 0;
+    const char *templates[] = {
+        "[=     ]", "[ =    ]", "[  =   ]", "[   =  ]", "[    = ]", "[     =]",
+        "[    = ]", "[   =  ]", "[  =   ]", "[ =    ]"
+    };
+    fprintf(stderr, "\r" ANSI_YELLOW "%s" ANSI_RESET, templates[frame]);
+    fflush(stderr);
+    frame = (frame + 1) % (sizeof(templates) / sizeof(templates[0]));
+}
 
 int user_interrupt (f_state * s, f_info * i)
 	{
@@ -590,7 +604,8 @@ int search_stream(f_state *s, f_info *i)
 		f_offset += bytesread;
 		if (!get_mode(s, mode_quiet))
 			{
-			fprintf(stderr, ANSI_YELLOW "*" ANSI_RESET);
+			//fprintf(stderr, ANSI_YELLOW "*" ANSI_RESET);
+				print_sliding_bar();
 
 			//displayPosition(s,i,f_offset);
 			}

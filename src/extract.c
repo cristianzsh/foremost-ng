@@ -1,4 +1,4 @@
-	 /* extract.c
+/* extract.c
  * Copyright (c) 2005, Nick Mikus
  * This file contains the file specific functions used to extract
  * data from an image.
@@ -142,7 +142,7 @@ unsigned char *extract_zip(f_state *s, u_int64_t c_offset, unsigned char *founda
 					
 				else
 					{
-						printf("foundat=%s\n",foundat);
+						//printf("foundat=%s\n",foundat);
 					}	
 				}
 
@@ -2144,7 +2144,7 @@ unsigned char *extract_exe(f_state *s, u_int64_t c_offset, unsigned char *founda
 			ret_time->tm_sec);
 	chop(ascii_time);
 
-	sprintf(comment, ascii_time);
+	sprintf(comment, "%s", ascii_time);
 	strcat(needle->comment, comment);
 	exe_char = htos(&foundat[22], FOREMOST_LITTLE_ENDIAN);
 	if (exe_char & 0x2000)

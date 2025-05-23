@@ -1,9 +1,12 @@
-/* FOREMOST
+/* FOREMOST-NG
  *
- * By Jesse Kornblum
+ * Originally developed as FOREMOST by Jesse Kornblum, Kris Kendall, & Nick Mikus
  *
  * This is a work of the US Government. In accordance with 17 USC 105,
  * copyright protection is not available for any work of the US Government.
+ *
+ * This version, named "foremost-ng", has been modified and extended by Cristian Souza
+ * to modernize the codebase and introduce new features.
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -197,6 +200,7 @@ char *__progname;
    Program Defaults
    ----------------------------------------------------------------- */
 #define MAX_STRING_LENGTH   1024
+#define MAX_BUILTIN   50
 #define COMMENT_LENGTH   64
 
 /* Modes refer to options that can be set by the user. */
@@ -343,7 +347,7 @@ typedef struct s_spec
     int written; /*used for -a mode*/
 }s_spec;
 
-extern s_spec search_spec[50];  /*ARRAY OF BUILTIN SEARCH TYPES*/
+extern s_spec search_spec[MAX_BUILTIN];  /*ARRAY OF BUILTIN SEARCH TYPES*/
 
 typedef struct f_info {
   char *file_name;

@@ -1,16 +1,19 @@
-/* FOREMOST
+/* FOREMOST-NG
  *
- * By Jesse Kornblum and Kris Kendall
- * 
+ * Originally developed as FOREMOST by Jesse Kornblum, Kris Kendall, & Nick Mikus
+ *
  * This is a work of the US Government. In accordance with 17 USC 105,
  * copyright protection is not available for any work of the US Government.
+ *
+ * This version, named "foremost-ng", has been modified and extended by Cristian Souza
+ * to modernize the codebase and introduce new features.
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- *
  */
+
 #include "main.h"
 #include "ansi_colors.h"
 
@@ -241,7 +244,10 @@ int main(int argc, char **argv)
 	register_signal_handler();
 	process_command_line(argc, argv, s);
 
-	load_config_file(s);
+	if (load_config_file(s))
+	{
+		fatal_error(s, "Unable to load the config file");
+	}
 
 	if (s->num_builtin == 0)
 		{
