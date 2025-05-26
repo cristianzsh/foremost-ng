@@ -31,8 +31,11 @@ CR_STRIP = x86_64-w64-mingw32-strip
 CR_GOAL = $(NAME).exe
 WINCC = $(RAW_CC) $(RAW_FLAGS) -D__WIN32
 
-# Auto-detect OpenSSL on macOS via Homebrew
-ifeq ($(SYS),darwin)
+# Include and lib paths for OpenBSD and FreeBSD
+ifeq ($(filter $(SYS),openbsd freebsd),$(SYS))
+RAW_FLAGS += -I/usr/local/include
+LINK_OPT += -L/usr/local/lib -lcurl -lssl -lcrypto
+else ifeq ($(SYS),darwin)
 OPENSSL_PATH := $(shell brew --prefix openssl@3 2>/dev/null)
 ifeq ($(OPENSSL_PATH),)
 $(error OpenSSL not found. Install with: brew install openssl@3)

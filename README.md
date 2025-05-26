@@ -14,6 +14,7 @@
 - ⚙️ Configurable file signatures via a plain-text configuration file.
 - 🪛 Supports header-only or header–footer scans.
 - 🧱 Works on forensic images or live drives.
+- 🦠 VirusTotal lookup by file hash (requires a VT API key).
 
 ---
 
@@ -34,16 +35,37 @@ sudo make install
 ```
 
 ### BSD
+
+Make sure ```curl``` is installed:
+```bash
+pkg_add curl # OpenBSD
+pkg install curl # FreeBSD
+```
+
 ```bash
 make unix
 sudo gmake install
 ```
 
 ### macOS
+
+Install OpenSSL:
+```bash
+brew install openssl@3
+```
+
 ```bash
 make mac
 sudo make macinstall
 ```
+
+### Cross compiling for Windows
+
+Install MinGW in your Linux distribution and cross-compile:
+```bash
+make cross
+```
+**Required DLLs can be found in the [windows_dlls](windows_dlls) directory of this repository.**
 
 > **Note:** On systems with glibc < 2.2.0, you may see harmless warnings about `ftello` and `fseeko`. These can be safely ignored.
 
