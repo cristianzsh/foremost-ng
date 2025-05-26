@@ -15,7 +15,7 @@ ifeq ($(filter $(SYS),openbsd freebsd),$(SYS))
 RAW_CC = clang
 endif
 
-# Where we get installed
+# Installation paths
 BIN = /usr/local/bin
 MAN = /usr/share/man/man8
 CONF = /usr/local/etc
@@ -26,20 +26,32 @@ RAW_FLAGS += -DVERSION="\"$(VERSION)\""
 # Setup for compiling and cross-compiling for Windows
 CR_CC = x86_64-w64-mingw32-gcc
 CR_FLAGS = -Wall -O2 -DVERSION="\"$(VERSION)\"" -D__WIN32 -fPIC
-CR_LINK = -fPIC
+CR_LINK = -fPIC -lssl -lcrypto -lcurl -lws2_32 -lcrypt32
 CR_STRIP = x86_64-w64-mingw32-strip
 CR_GOAL = $(NAME).exe
 WINCC = $(RAW_CC) $(RAW_FLAGS) -D__WIN32
 
-# Generic "how to compile C files"
+# Auto-detect OpenSSL on macOS via Homebrew
+ifeq ($(SYS),darwin)
+OPENSSL_PATH := $(shell brew --prefix openssl@3 2>/dev/null)
+ifeq ($(OPENSSL_PATH),)
+$(error OpenSSL not found. Install with: brew install openssl@3)
+endif
+RAW_FLAGS += -I$(OPENSSL_PATH)/include
+LINK_OPT += -L$(OPENSSL_PATH)/lib -lssl -lcrypto -lcurl
+else
+LINK_OPT += -lssl -lcrypto -lcurl
+endif
+
+# Generic C compile
 CC = $(RAW_CC) $(RAW_FLAGS) -D__UNIX
 .c.o:
 	$(CC) -c $<
 
-# Definitions
-HEADER_FILES = main.h ole.h extract.h
-SRC = main.c state.c helpers.c config.c cli.c engine.c dir.c extract.c api.c
-OBJ = main.o state.o helpers.o config.o cli.o engine.o dir.o extract.o api.o
+# Source and object files
+HEADER_FILES = main.h ole.h extract.h vt_query.h
+SRC = main.c state.c helpers.c config.c cli.c engine.c dir.c extract.c api.c vt_query.c
+OBJ = main.o state.o helpers.o config.o cli.o engine.o dir.o extract.o api.o vt_query.o
 DOCS = Makefile README CHANGES $(MAN_PAGES) foremost.conf
 WINDOC = README.txt CHANGES.txt
 MAN_PAGES = $(NAME).8.gz

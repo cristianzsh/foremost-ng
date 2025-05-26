@@ -197,14 +197,17 @@ void setup_stream(f_state *s, f_info *i)
 
 void audit_layout(f_state *s)
 {
-	audit_msg(s,
-			  "Num\t %s (bs=%d)\t %10s\t %s\t %s \n",
-			  "Name",
-			  s->block_size,
-			  "Size",
-			  "File Offset",
-			  "Comment");
+	char name_col[32];
+	snprintf(name_col, sizeof(name_col), "Name (bs=%d)", s->block_size);
 
+	audit_msg(s,
+		"%4s  %-20s %10s %12s  %-24s  %-15s",
+		"ID",
+		name_col,
+		"Size",
+		"Offset",
+		"Comment",
+		"VT");
 }
 
 void dumpInd(unsigned char *ind, int bs)

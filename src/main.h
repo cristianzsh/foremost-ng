@@ -229,6 +229,7 @@ extern char *__progname;
 #define mode_write_all        1<<5
 #define mode_write_audit      1<<6
 #define mode_multi_file	      1<<7
+#define mode_virustotal       1<<8
 
 #define MAX_NEEDLES                   254
 #define NUM_SEARCH_SPEC_ELEMENTS        6
@@ -360,6 +361,7 @@ typedef struct s_spec
     int found;
     
     char comment[MAX_STRING_LENGTH];/*Used for audit*/
+    char vt_label[30];/*Used for audit*/
     int written; /*used for -a mode*/
 }s_spec;
 

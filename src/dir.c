@@ -1,5 +1,6 @@
 #include "main.h"
 #include "ansi_colors.h"
+#include "vt_query.h"
 #include <inttypes.h>
 
 int is_empty_directory (DIR * temp)
@@ -310,113 +311,107 @@ int create_sub_dirs(f_state *s)
 /*We have found a file so write to disk*/
 int write_to_disk(f_state *s, s_spec *needle, uint64_t len, unsigned char *buf, uint64_t t_offset)
 {
+	char fn[MAX_STRING_LENGTH];
+	FILE *f;
+	FILE *test;
+	long byteswritten = 0;
+	char temp[32];
+	uint64_t block = ((t_offset) / s->block_size);
+	int i = 1;
+	char filename_col[32] = {0};
 
-	char		fn[MAX_STRING_LENGTH];
-	FILE		*f;
-	FILE		*test;
-	long		byteswritten = 0;
-	char		temp[32];
-	uint64_t	block = ((t_offset) / s->block_size);
-	int			i = 1;
-
-	//Name files based on their block offset
 	needle->written = TRUE;
 
-	if (get_mode(s, mode_write_audit))
-		{
+	snprintf(needle->vt_label, sizeof(needle->vt_label), "N/A");
+
+	if (get_mode(s, mode_write_audit)) {
 		if (needle->comment[0] == '\0')
 			strcpy(needle->comment, " ");
 
-		audit_msg(s,
-				  "%d:\t%10ld.%s \t %10s \t %10llu \t %s",
-				  s->fileswritten,
-				  block,
-				  needle->suffix,
-				  human_readable(len, temp),
-				  t_offset,
-				  needle->comment);
+		snprintf(filename_col, sizeof(filename_col), "%08" PRIu64 ".%s", block, needle->suffix);
+		audit_msg(s, "%2d: %-20s %10s %12llu  %-24s  %-15s",
+			s->fileswritten,
+			filename_col,
+			human_readable(len, temp),
+			t_offset,
+			needle->comment,
+			needle->vt_label);
+
 		s->fileswritten++;
 		needle->found++;
 		return TRUE;
-		}
+	}
 
-	snprintf(fn,
-		MAX_STRING_LENGTH,
+	snprintf(fn, MAX_STRING_LENGTH,
 		"%s/%s/%0*" PRIu64 ".%s",
 		s->output_directory,
 		needle->suffix,
 		8,
-		(uint64_t)block,
+		block,
 		needle->suffix);
 
 	test = fopen(fn, "rb");
-	while (test)	/*Test the files to make sure we have unique file names, some headers could be within the same block*/
-		{
+	while (test) {
 		memset(fn, 0, MAX_STRING_LENGTH - 1);
-		snprintf(fn,
-				 MAX_STRING_LENGTH - 1,
-				"%s/%s/%0*" PRIu64 "_%d.%s",
-				s->output_directory,
-				needle->suffix,
-				8,
-				(uint64_t)block,
-				i,
-				needle->suffix);
+		snprintf(fn, MAX_STRING_LENGTH - 1,
+			"%s/%s/%0*" PRIu64 "_%d.%s",
+			s->output_directory,
+			needle->suffix,
+			8,
+			block,
+			i,
+			needle->suffix);
 
 		i++;
 		fclose(test);
 		test = fopen(fn, "rb");
-		}
+	}
 
-	if (!(f = fopen(fn, "wb")))
-		{
+	if (!(f = fopen(fn, "wb"))) {
 		printf("fn = %s  failed\n", fn);
 		fatal_error(s, "Can't open file for writing \n");
-		}
+	}
 
-	if ((byteswritten = fwrite(buf, sizeof(char), len, f)) != len)
-		{
+	if ((byteswritten = fwrite(buf, sizeof(char), len, f)) != len) {
 		fprintf(stderr, "fn=%s bytes=%lu\n", fn, byteswritten);
 		fatal_error(s, "Error writing file\n");
-		}
+	}
 
-	if (fclose(f))
-		{
+	if (fclose(f)) {
 		fatal_error(s, "Error closing file\n");
-		}
+	}
 
 	if (needle->comment[0] == '\0')
 		strcpy(needle->comment, " ");
-	
+
+	if (get_mode(s, mode_virustotal)) {
+		char sha256[65];
+		VTResult vt = {0};
+
+		sha_checksum(fn, "sha256", sha256);
+		vt = vt_check_hash(sha256);
+
+		if (vt.is_malicious) {
+			snprintf(needle->vt_label, sizeof(needle->vt_label), "Malicious (%d)", vt.malicious_count);
+		} else {
+			snprintf(needle->vt_label, sizeof(needle->vt_label), "Clean (%d)", vt.undetected_count);
+		}
+	}
+
 	if (i == 1) {
-      audit_msg(s,"%d:\t%08llu.%s \t %10s \t %10llu \t %s",
-         s->fileswritten,
-         block,
-         needle->suffix,
-         human_readable(len, temp),
-         t_offset,
-         needle->comment);
-         } else {
-      audit_msg(s,"%d:\t%08llu_%d.%s \t %10s \t %10llu \t %s",
-         s->fileswritten,
-         block,
-         i - 1,
-         needle->suffix, 
-         human_readable(len, temp),
-         t_offset,
-         needle->comment);
-         }
+		snprintf(filename_col, sizeof(filename_col), "%08" PRIu64 ".%s", block, needle->suffix);
+	} else {
+		snprintf(filename_col, sizeof(filename_col), "%08" PRIu64 "_%d.%s", block, i - 1, needle->suffix);
+	}
 
-/*
-	audit_msg(s,"%d:\t%10llu.%s \t %10s \t %10llu \t %s",
-			  s->fileswritten,
-			  block,
-			  needle->suffix,
-			  human_readable(len, temp),
-			  t_offset,
-			  needle->comment);
+	audit_msg(s, "%4d: %-20s %10s %12llu  %-24s  %-15s",
+		s->fileswritten,
+		filename_col,
+		human_readable(len, temp),
+		t_offset,
+		needle->comment,
+		needle->vt_label);
 
-*/
 	s->fileswritten++;
 	needle->found++;
 	return TRUE;

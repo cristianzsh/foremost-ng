@@ -108,6 +108,7 @@ void usage(void)
 	fprintf(stderr, "  " ANSI_CYAN "-c" ANSI_RESET "  Set configuration file to use (defaults to %s).\n", DEFAULT_CONFIG_FILE);
 	fprintf(stderr, "  " ANSI_CYAN "-q" ANSI_RESET "  Enables quick mode. Search are performed on 512 byte boundaries.\n");
 	fprintf(stderr, "  " ANSI_CYAN "-Q" ANSI_RESET "  Enables quiet mode. Suppress output messages.\n");
+	fprintf(stderr, "  " ANSI_CYAN "-x" ANSI_RESET "  Scan each recovered file using VirusTotal API (requires VT_API_KEY).\n");
 	fprintf(stderr, "  " ANSI_CYAN "-v" ANSI_RESET "  Verbose mode. Logs all messages to screen.\n");
 }
 
@@ -117,7 +118,7 @@ void process_command_line(int argc, char **argv, f_state *s)
 	int		i;
 	char	*ptr1, *ptr2;
 
-	while ((i = getopt(argc, argv, "o:b:c:t:s:i:k:hqmQTadvVw")) != -1)
+	while ((i = getopt(argc, argv, "o:b:c:t:s:i:k:hqmQTadvVwx")) != -1)
 		{
 		switch (i)
 			{
@@ -152,6 +153,10 @@ void process_command_line(int argc, char **argv, f_state *s)
 
 			case 'Q':
 				set_mode(s, mode_quiet);
+				break;
+
+			case 'x':
+				set_mode(s, mode_virustotal);
 				break;
 
 			case 'c':
