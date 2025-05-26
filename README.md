@@ -69,6 +69,6 @@ foremost-ng [options] [image_or_device]
 To remove `foremost-ng` from your system:
 
 ```bash
-cd foremost-ng-<version>
+cd foremost-ng-<version>/src
 sudo make uninstall
 ```
