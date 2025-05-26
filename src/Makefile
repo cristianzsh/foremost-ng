@@ -91,21 +91,29 @@ $(GOAL): $(OBJ)
 #---------------------------------------------------------------------
 
 install: goals
+	@echo "Installing binary to $(BIN)"
+	install -d $(BIN)
 	install -m 755 $(GOAL) $(BIN)
+
+	@echo "Installing man page to $(MAN)"
+	install -d $(MAN)
 	install -m 444 $(MAN_PAGES) $(MAN)
+
+	@echo "Installing config to $(CONF)"
+	install -d $(CONF)
 	install -m 444 foremost.conf $(CONF)
 
-macinstall: BIN = /usr/local/bin/
-macinstall: MAN = /usr/share/man/man1/
-macinstall: CONF = /usr/local/etc/
-macinstall: mac install
+macinstall: BIN = /usr/local/bin
+macinstall: MAN = /usr/local/share/man/man8
+macinstall: CONF = /usr/local/etc
+macinstall: install
 
 uninstall:
 	rm -f -- $(BIN)/$(GOAL)
 	rm -f -- $(MAN)/$(MAN_PAGES)
 
-macuninstall: BIN = /usr/bin
-macuninstall: MAN = /usr/share/man/man1
+macuninstall: BIN = /usr/local/bin
+macuninstall: MAN = /usr/local/share/man/man8
 macuninstall: uninstall
 
 #---------------------------------------------------------------------
@@ -151,3 +159,5 @@ cross-pkg: clean cross win-doc
 	rm -f $(WINDOC)
 
 world: package cross-pkg
+
+.PHONY: all clean install uninstall macinstall macuninstall package cross-pkg win-doc goals
