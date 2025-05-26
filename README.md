@@ -23,7 +23,7 @@ Clone or download the `foremost-ng` archive, then build and install according to
 
 ```bash
 # Common steps
-tar zxvf foremost-ng-<version>.tar.gz
+tar xzvf foremost-ng-<version>.tar.gz
 cd foremost-ng-<version>/src
 ```
 
@@ -36,13 +36,7 @@ sudo make install
 ### BSD
 ```bash
 make unix
-sudo make install
-```
-
-### Solaris
-```bash
-make solaris
-sudo make install
+sudo gmake install
 ```
 
 ### macOS

@@ -55,10 +55,6 @@ goals: $(GOAL)
 linux: CC += -D__LINUX -DLARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 linux: goals
 
-sunos: solaris
-solaris: CC += -D__SOLARIS -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
-solaris: goals
-
 darwin mac: CC += -D__MACOSX
 darwin mac: goals
 
