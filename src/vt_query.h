@@ -1,3 +1,11 @@
+/* FOREMOST-NG
+ *
+ * Developed by Cristian Souza
+ *
+ * Provides a structure to hold scan results and functions to calculate
+ * SHA-1/SHA-256 checksums and fetch malware detection data from VirusTotal.
+ */
+
 #ifndef VT_QUERY_H
 #define VT_QUERY_H
 

@@ -1,3 +1,12 @@
+/* FOREMOST-NG
+ *
+ * Developed by Cristian Souza
+ *
+ * Checks a file hash on VirusTotal and returns the number of malicious
+ * and undetected reports, along with a verdict flag. Requires VT_API_KEY
+ * to be set as an environment variable.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
