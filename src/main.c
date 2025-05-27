@@ -91,7 +91,7 @@ void usage(void)
 {
 	fprintf(stderr, ANSI_BOLD ANSI_CYAN "%s version %s by %s.%s" ANSI_RESET, __progname, VERSION, AUTHOR, NEWLINE);
 	fprintf(stderr, ANSI_YELLOW
-			"%s %s [-v|-V|-h|-T|-Q|-q|-a|-w-d] [-t <type>] [-s <blocks>] [-k <size>] \n\t[-b <size>] [-c <file>] [-o <dir>] [-i <file] %s%s" ANSI_RESET,
+			"%s %s [-v|-V|-h|-T|-Q|-q|-a|-w|-d|-x] [-t <type>] [-s <blocks>] [-k <size>] \n\t[-b <size>] [-c <file>] [-o <dir>] [-i <file] %s%s" ANSI_RESET,
 		CMD_PROMPT,
 			__progname,
 			NEWLINE,
