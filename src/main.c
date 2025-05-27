@@ -91,8 +91,8 @@ void usage(void)
 {
 	fprintf(stderr, ANSI_BOLD ANSI_CYAN "%s version %s by %s.%s" ANSI_RESET, __progname, VERSION, AUTHOR, NEWLINE);
 	fprintf(stderr, ANSI_YELLOW
-			"%s %s [-v|-V|-h|-T|-Q|-q|-a|-w|-d|-x] [-t <type>] [-s <blocks>] [-k <size>] \n\t[-b <size>] [-c <file>] [-o <dir>] [-i <file] %s%s" ANSI_RESET,
-		CMD_PROMPT,
+			"%s %s [-v|-V|-h|-T|-Q|-q|-a|-w|-d|-x] [-t <type>] [-s <blocks>] [-k <size>] \n\t[-b <size>] [-c <file>] [-o <dir>] [-i <file>] <input files...>%s%s" ANSI_RESET,
+			CMD_PROMPT,
 			__progname,
 			NEWLINE,
 			NEWLINE);
@@ -101,12 +101,12 @@ void usage(void)
 	fprintf(stderr, "  " ANSI_CYAN "-V" ANSI_RESET "  Display copyright information and exit.\n");
 	fprintf(stderr, "  " ANSI_CYAN "-t" ANSI_RESET "  Specify file type (e.g., jpeg,pdf).\n");
 	fprintf(stderr, "  " ANSI_CYAN "-d" ANSI_RESET "  Turn on indirect block detection (for UNIX file-systems).\n");
-	fprintf(stderr, "  " ANSI_CYAN "-i" ANSI_RESET "  Specify input file (default is stdin).\n");
+	fprintf(stderr, "  " ANSI_CYAN "-i" ANSI_RESET "  Specify a single input file from the command line.\n");
 	fprintf(stderr, "  " ANSI_CYAN "-a" ANSI_RESET "  Write all headers, perform no error detection (corrupted files).\n");
 	fprintf(stderr, "  " ANSI_CYAN "-w" ANSI_RESET "  Only write the audit file, do not write any detected files to the disk.\n");
 	fprintf(stderr, "  " ANSI_CYAN "-o" ANSI_RESET "  Set output directory (defaults to %s).\n", DEFAULT_OUTPUT_DIRECTORY);
 	fprintf(stderr, "  " ANSI_CYAN "-c" ANSI_RESET "  Set configuration file to use (defaults to %s).\n", DEFAULT_CONFIG_FILE);
-	fprintf(stderr, "  " ANSI_CYAN "-q" ANSI_RESET "  Enables quick mode. Search are performed on 512 byte boundaries.\n");
+	fprintf(stderr, "  " ANSI_CYAN "-q" ANSI_RESET "  Enables quick mode. Searches are performed on 512 byte boundaries.\n");
 	fprintf(stderr, "  " ANSI_CYAN "-Q" ANSI_RESET "  Enables quiet mode. Suppress output messages.\n");
 	fprintf(stderr, "  " ANSI_CYAN "-x" ANSI_RESET "  Scan each recovered file using VirusTotal API (requires VT_API_KEY).\n");
 	fprintf(stderr, "  " ANSI_CYAN "-v" ANSI_RESET "  Verbose mode. Logs all messages to screen.\n");
@@ -114,15 +114,13 @@ void usage(void)
 
 void process_command_line(int argc, char **argv, f_state *s)
 {
-
-	int		i;
-	char	*ptr1, *ptr2;
+	int i;
+	char *ptr1, *ptr2;
 
 	while ((i = getopt(argc, argv, "o:b:c:t:s:i:k:hqmQTadvVwx")) != -1)
-		{
+	{
 		switch (i)
-			{
-
+		{
 			case 'v':
 				set_mode(s, mode_verbose);
 				break;
@@ -132,11 +130,11 @@ void process_command_line(int argc, char **argv, f_state *s)
 				break;
 
 			case 'w':
-				set_mode(s, mode_write_audit);	/*Only write audit*/
+				set_mode(s, mode_write_audit);
 				break;
 
 			case 'a':
-				set_mode(s, mode_write_all);	/*Write all headers*/
+				set_mode(s, mode_write_all);
 				break;
 
 			case 'b':
@@ -165,6 +163,7 @@ void process_command_line(int argc, char **argv, f_state *s)
 
 			case 'm':
 				set_mode(s, mode_multi_file);
+				break;
 
 			case 'k':
 				set_chunk(s, atoi(optarg));
@@ -183,38 +182,35 @@ void process_command_line(int argc, char **argv, f_state *s)
 				break;
 
 			case 't':
-
-				/*See if we have multiple file types to define*/
 				ptr1 = ptr2 = optarg;
 				while (1)
-					{
+				{
 					if (!*ptr2)
-						{
+					{
 						if (!set_search_def(s, ptr1, 0))
-							{
+						{
 							usage();
 							exit(EXIT_SUCCESS);
-							}
-						break;
 						}
+						break;
+					}
 
 					if (*ptr2 == ',')
-						{
+					{
 						*ptr2 = '\0';
 						if (!set_search_def(s, ptr1, 0))
-							{
+						{
 							usage();
 							exit(EXIT_SUCCESS);
-							}
-
+						}
 						*ptr2++ = ',';
 						ptr1 = ptr2;
-						}
-					else
-						{
-						ptr2++;
-						}
 					}
+					else
+					{
+						ptr2++;
+					}
+				}
 				break;
 
 			case 'h':
@@ -223,34 +219,27 @@ void process_command_line(int argc, char **argv, f_state *s)
 
 			case 'V':
 				printf("%s%s", VERSION, NEWLINE);
-
-				/* We could just say printf(COPYRIGHT), but that's a good way
-	 to introduce a format string vulnerability. Better to always
-	 use good programming practice... */
 				printf("%s", COPYRIGHT);
 				exit(EXIT_SUCCESS);
 
 			default:
 				try_msg();
 				exit(EXIT_FAILURE);
-
-			}
-
 		}
+	}
 
 #ifdef __DEBUG
 	dump_state(s);
 #endif
-
 }
 
 int main(int argc, char **argv)
 {
-	FILE	*testFile = NULL;
+	FILE *testFile = NULL;
 	f_state *s = (f_state *)malloc(sizeof(f_state));
-	int		input_files = 0;
-	char	**temp = argv;
-	DIR* 	dir;
+	int input_files = 0;
+	char **temp = argv;
+	DIR *dir;
 #ifdef _WIN32
 	enable_virtual_terminal_processing();
 #endif
@@ -259,14 +248,11 @@ int main(int argc, char **argv)
 	__progname = my_basename(argv[0]);
 #endif
 
-	/* if no arguments given, show usage */
-	if (argc < 2)
-	{
+	if (argc < 2) {
 		usage();
 		return EXIT_SUCCESS;
 	}
 
-	/*Initialize the global state struct*/
 	if (initialize_state(s, argc, argv))
 		fatal_error(s, "Unable to initialize state");
 
@@ -274,99 +260,81 @@ int main(int argc, char **argv)
 	process_command_line(argc, argv, s);
 
 	if (load_config_file(s))
-	{
 		fatal_error(s, "Unable to load the config file");
-	}
 
 	if (s->num_builtin == 0)
-		{
-
-		/*Nothing specified via the command line or the conf
-	file so default to all builtin search types*/
 		set_search_def(s, "all", 0);
+
+	// Pass 1: count how many valid input files there are
+	argv = temp + 1;
+	while (*argv != NULL) {
+		if (strcmp(*argv, "-c") == 0) {
+			argv += 2;
+			continue;
 		}
-	
+
+		dir = opendir(*argv);
+		testFile = fopen(*argv, "rb");
+
+		if (testFile && !dir) {
+			fclose(testFile);
+			input_files++;
+		} else {
+			fprintf(stderr, ANSI_RED "[!] File not found or is a directory: %s\n" ANSI_RESET, *argv);
+		}
+
+		if (dir) closedir(dir);
+		++argv;
+	}
+
+	// If no valid files were found
+	if (input_files == 0) {
+		fprintf(stderr, ANSI_RED "[!] No valid input files to process.\n" ANSI_RESET);
+		free_state(s);
+		free(s);
+		return EXIT_FAILURE;
+	}
+
+	// Safe to create output structures now
 	if (create_output_directory(s))
-		fatal_error(s, "Unable to open output directory");	
+		fatal_error(s, "Unable to open output directory");
 
 	if (!get_mode(s, mode_write_audit))
-		{
 		create_sub_dirs(s);
-		}
 
 	if (open_audit_file(s))
 		fatal_error(s, "Can't open audit file");
 
-	/* Scan for valid files to open */
-	while (*argv != NULL)
-	{
-		if(strcmp(*argv,"-c")==0)
-		{
-			/*jump past the conf file so we don't process it.*/
-			argv+=2;
-		}
-		testFile = fopen(*argv, "rb");
-		if (testFile)
-		{
-			fclose(testFile);
-			dir = opendir(*argv);
-			
-			if (strstr(s->config_file, *argv) == NULL && !dir)
-			{
-				input_files++;
-			}
-			
-			if(dir) closedir(dir);		
+	if (input_files > 1)
+		set_mode(s, mode_multi_file);
+
+	// Pass 2: process each valid input file
+	argv = temp + 1;
+	while (*argv != NULL) {
+		if (strcmp(*argv, "-c") == 0) {
+			argv += 2;
+			continue;
 		}
 
+		dir = opendir(*argv);
+		testFile = fopen(*argv, "rb");
+
+		if (testFile && !dir) {
+			fclose(testFile);
+			set_input_file(s, *argv);
+			process_file(s);
+		}
+
+		if (dir) closedir(dir);
 		++argv;
 	}
 
-	argv = temp;
-	if (input_files > 1)
-		{
-		set_mode(s, mode_multi_file);
-		}
-
-	++argv;
-	while (*argv != NULL)
-		{
-		testFile = fopen(*argv, "rb");
-
-		if (testFile)
-			{
-				fclose(testFile);
-				dir = opendir(*argv);
-				if (strstr(s->config_file, *argv) == NULL && !dir)
-				{
-					set_input_file(s, *argv);
-					process_file(s);
-				}
-				if(dir) closedir(dir);
-			}
-
-		++argv;
-		}
-
-	if (input_files == 0)
-		{
-
-		//printf("using stdin\n");
-		process_stdin(s);
-		}
-
 	print_stats(s);
-
-	/*Lets try to clean up some of the extra sub_dirs*/
 	cleanup_output(s);
 
-	if (close_audit_file(s))
-		{
-
-		/* Hells bells. This is bad, but really, what can we do about it? 
-       Let's just report the error and try to get out of here! */
+	if (close_audit_file(s)) {
 		print_error(s, AUDIT_FILE_NAME, "Error closing audit file");
-		}
+	}
 
 	free_state(s);
 	free(s);
