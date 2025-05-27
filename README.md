@@ -86,6 +86,29 @@ foremost-ng [options] [image_or_device]
 
 ---
 
+## VirusTotal API
+
+`foremost-ng` supports automatic file reputation checks using the VirusTotal API via the ```-x``` command-line option. This allows you to analyze recovered files for potential threats by submitting their hashes to VirusTotal.
+
+To enable this feature, follow these steps:
+
+1. [Create a free VirusTotal account](https://www.virustotal.com/gui/join-us).
+2. Obtain your personal **API key**.
+3. Set the key as an environment variable named `VT_API_KEY`.
+
+```bash
+# Unix-like systems
+export VT_API_KEY=yourkey
+
+# Windows CMD
+set VT_API_KEY=yourkey
+
+# Windows PowerShell
+$env:VT_API_KEY="yourkey"
+```
+
+---
+
 ## Uninstallation
 
 To remove `foremost-ng` from your system:
