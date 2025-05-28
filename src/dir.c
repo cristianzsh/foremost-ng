@@ -2,417 +2,278 @@
 #include "ansi_colors.h"
 #include "vt_query.h"
 #include <inttypes.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
-int is_empty_directory (DIR * temp)
-	{
+#ifdef _WIN32
+#  include <direct.h>
+#endif
 
-	/* Empty directories contain two entries for . and .. 
-     A directory with three entries, therefore, is not empty */
-	if (readdir(temp) && readdir(temp) && readdir(temp))
-		return FALSE;
+// Return TRUE if directory has only “.” and “..”
+int is_empty_directory(DIR *dir_stream) {
+    // Read three entries: if third exists, directory is not empty
+    if (readdir(dir_stream) && readdir(dir_stream) && readdir(dir_stream)) {
+        return FALSE;
+    }
 
-	return TRUE;
-	}
-
-/*Try to cleanup the ouput directory if nothing to a sub-dir*/
-void cleanup_output(f_state *s)
-{
-	char			dir_name[MAX_STRING_LENGTH];
-
-	DIR				*temp;
-	DIR				*outputDir;
-	struct dirent	*entry;
-
-	if ((outputDir = opendir(get_output_directory(s))) == NULL)
-		{
-
-		/*Error?*/
-		}
-
-	while ((entry = readdir(outputDir)))
-		{
-		memset(dir_name, 0, MAX_STRING_LENGTH - 1);
-		strcpy(dir_name, get_output_directory(s));
-		strcat(dir_name, "/");
-		strcat(dir_name, entry->d_name);
-		temp = opendir(dir_name);
-		if (temp != NULL)
-			{
-			if (is_empty_directory(temp))
-				{
-				rmdir(dir_name);
-				}
-			}
-
-		}
-
+    return TRUE;
 }
 
-#include <errno.h>    // for errno and EEXIST
-#include <string.h>   // for strerror
-#ifdef _WIN32
-	#include <direct.h> // for _mkdir
-#else
-	#include <sys/stat.h> // for mode_t and mkdir
-#endif
+// Remove any empty subdirectories under the output directory
+void cleanup_output(f_state *s) {
+    char path[MAX_STRING_LENGTH];
+    DIR *d = opendir(get_output_directory(s));
+    struct dirent *e;
 
-int make_new_directory(f_state *s, char *fn)
-{
-#ifdef _WIN32
-	if (_mkdir(fn) != 0)
-	{
-#else
-		mode_t new_mode = (
-			S_IRUSR | S_IWUSR | S_IXUSR |   // User: read, write, execute
-			S_IRGRP | S_IWGRP | S_IXGRP |   // Group: read, write, execute
-			S_IROTH | S_IWOTH               // Others: read, write
-		);
+    if (!d) {
+        return;
+    }
 
-		if (mkdir(fn, new_mode) != 0)
-		{
-#endif
-			if (errno != EEXIST)
-			{
-				print_error(s, fn, strerror(errno));
-				return TRUE;
-			}
-		}
+    while ((e = readdir(d))) {
+        // Build full path for entry
+        snprintf(path, sizeof(path), "%s/%s",
+                 get_output_directory(s), e->d_name);
+        DIR *sub = opendir(path);
+        if (sub) {
+            // If subdir is empty, remove it
+            if (is_empty_directory(sub)) {
+                rmdir(path);
+            }
 
-		return FALSE;
-	}
-
-
-
-/*Clean the timestamped dir name to make it a little more file system friendly*/
-char *clean_time_string(char *time)
-{
-	int len = strlen(time);
-	int i = 0;
-
-	for (i = 0; i < len; i++)
-	{
-#ifdef __WIN32
-		if (time[i] == ':' && time[i + 1] != '\\')
-			{
-			time[i] = '_';
-			}
-
-#else
-		if (time[i] == ' ' || time[i] == ':')
-			{
-			time[i] = '_';
-			}
-#endif
-	}
-
-	return time;
+            closedir(sub);
+        }
+    }
+    closedir(d);
 }
 
-int create_output_directory(f_state *s)
-{
-	DIR		*d;
-	char	dir_name[MAX_STRING_LENGTH];
-  
-	memset(dir_name, 0, MAX_STRING_LENGTH - 1);
-	if (s->time_stamp)
-		{
-		strcpy(dir_name, get_output_directory(s));
-		strcat(dir_name, "_");
-		strcat(dir_name, get_start_time(s));
-		clean_time_string(dir_name);
-		set_output_directory(s, dir_name);
-		}
+// Make one directory; only error if it fails for reasons other than EEXIST
+int make_new_directory(f_state *s, char *fn) {
+#ifdef _WIN32
+    if (_mkdir(fn) != 0) {
+#else
+    mode_t m = S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP|S_IWGRP|S_IXGRP|S_IROTH|S_IWOTH;
+    if (mkdir(fn, m) != 0) {
+#endif
+        // If directory already exists, that's OK
+        if (errno != EEXIST) {
+            print_error(s, fn, strerror(errno));
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+// Replace spaces and colons in timestamp with underscores
+char *clean_time_string(char *t) {
+    for (size_t i = 0; t[i]; i++) {
+#ifdef _WIN32
+        // On Windows, only replace ':' that is not drive letter
+        if (t[i] == ':' && t[i+1] != '\\') {
+            t[i] = '_';
+        }
+#else
+        if (t[i] == ' ' || t[i] == ':') {
+            t[i] = '_';
+        }
+#endif
+    }
+    return t;
+}
+
+// Ensure output directory exists and is empty, or create it
+int create_output_directory(f_state *s) {
+    DIR *d;
+    char tmp[MAX_STRING_LENGTH] = {0};
+
+    if (s->time_stamp) {
+        // Append timestamp to directory name
+        snprintf(tmp, sizeof(tmp), "%s_%s",
+                 get_output_directory(s), get_start_time(s));
+        clean_time_string(tmp);
+        set_output_directory(s, tmp);
+    }
+
 #ifdef DEBUG
-	printf("Checking output directory %s\n", get_output_directory(s));
+    printf("Checking output dir %s\n", get_output_directory(s));
 #endif
 
-	if ((d = opendir(get_output_directory(s))) != NULL)
-		{
+    d = opendir(get_output_directory(s));
+    if (d) {
+        // Directory exists: must be empty
+        if (!is_empty_directory(d)) {
+            printf(ANSI_BOLD ANSI_RED "[ERROR] " ANSI_RESET
+                   "%s not empty\n", get_output_directory(s));
+            exit(EXIT_FAILURE);
+        }
+        closedir(d);
+        return FALSE;
+    }
 
-		/* The directory exists already. It MUST be empty for us to continue */
-		if (!is_empty_directory(d))
-			{
-			printf(ANSI_BOLD ANSI_RED "[ERROR] " ANSI_RESET "%s is not empty\n \tPlease specify another directory or run with -T.\n",
-				   get_output_directory(s));
+    // If error is something other than "does not exist", report it
+    if (errno != ENOENT) {
+        print_error(s, get_output_directory(s), strerror(errno));
+        return TRUE;
+    }
 
-			exit(EXIT_FAILURE);
-			}
+    // Reject empty output directory name
+    if (get_output_directory(s)[0] == '\0') {
+        print_error(s, "(output_directory)", "Name unknown");
+        return TRUE;
+    }
 
-		/* The directory exists and is empty. We're done! */
-		closedir(d);
-		return FALSE;
-		}
-
-	/* The error value ENOENT means that either the directory doesn't exist,
-     which is fine, or that the filename is zero-length, which is bad.
-     All other errors are, of course, bad. 
-*/
-	if (errno != ENOENT)
-		{
-		print_error(s, get_output_directory(s), strerror(errno));
-		return TRUE;
-		}
-
-	if (strlen(get_output_directory(s)) == 0)
-		{
-
-		/* Careful! Calling print_error will try to display a filename
-       that is zero characters! In theory this should never happen 
-       as our call to realpath should avoid this. But we'll play it safe. */
-		print_error(s, "(output_directory)", "Output directory name unknown");
-		return TRUE;
-		}
-
-	return (make_new_directory(s, get_output_directory(s)));
+    // Create the directory
+    return make_new_directory(s, get_output_directory(s));
 }
 
-/*Create file type sub dirs, can get tricky when multiple types use one 
- extraction algorithm (OLE)*/
-int create_sub_dirs(f_state *s)
-{
-	int		i = 0;
-	int		j = 0;
-	char	dir_name[MAX_STRING_LENGTH];
-	char	ole_types[7][4] = { "ppt", "doc", "xls", "sdw", "mbd", "vis", "ole" };
-	char	riff_types[2][4] = { "avi", "wav" };
-	char	zip_types[8][5] = { "sxc", "sxw", "sxi", "sx", "jar","docx","pptx","xlsx" };
+// Create subdirectories for each file type (and related types)
+int create_sub_dirs(f_state *s) {
+    char path[MAX_STRING_LENGTH];
+    const char ole[7][4]  = { "ppt","doc","xls","sdw","mbd","vis","ole" };
+    const char riff[2][4] = { "avi","wav" };
+    const char zip[8][5]  = { "sxc","sxw","sxi","sx","jar","docx","pptx","xlsx" };
 
-	for (i = 0; i < s->num_builtin; i++)
-		{
-		memset(dir_name, 0, MAX_STRING_LENGTH - 1);
-		strcpy(dir_name, get_output_directory(s));
-		strcat(dir_name, "/");
-		strcat(dir_name, search_spec[i].suffix);
-		make_new_directory(s, dir_name);
+    for (int i = 0; i < s->num_builtin; i++) {
+        // Base suffix dir
+        snprintf(path, sizeof(path), "%s/%s",
+                 get_output_directory(s), search_spec[i].suffix);
+        make_new_directory(s, path);
 
-		if (search_spec[i].type == OLE)
-			{
-			for (j = 0; j < 7; j++)
-				{
-				if (strstr(ole_types[j], search_spec[i].suffix))
-					continue;
+        // OLE group handling
+        if (search_spec[i].type == OLE || get_mode(s, mode_write_all)) {
+            for (int j = 0; j < 7; j++) {
+                // Skip own suffix
+                if (!strstr(path, ole[j])) {
+                    snprintf(path, sizeof(path), "%s/%s",
+                             get_output_directory(s), ole[j]);
+                    make_new_directory(s, path);
+                }
+            }
+        }
 
-				memset(dir_name, 0, MAX_STRING_LENGTH - 1);
-				strcpy(dir_name, get_output_directory(s));
-				strcat(dir_name, "/");
-				strcat(dir_name, ole_types[j]);
-				make_new_directory(s, dir_name);
-				}
-			}
-		else if (get_mode(s, mode_write_all))
-			{
-			for (j = 0; j < 7; j++)
-				{
-				if (strstr(search_spec[i].suffix, ole_types[j]))
-					{
-					for (j = 0; j < 7; j++)
-						{
-						if (strstr(ole_types[j], search_spec[i].suffix))
-							continue;
+        // EXE group => add dll dir
+        if (search_spec[i].type == EXE) {
+            snprintf(path, sizeof(path), "%s/dll",
+                     get_output_directory(s));
+            make_new_directory(s, path);
+        }
 
-						memset(dir_name, 0, MAX_STRING_LENGTH - 1);
-						strcpy(dir_name, get_output_directory(s));
-						strcat(dir_name, "/");
-						strcat(dir_name, ole_types[j]);
-						make_new_directory(s, dir_name);
-						}
-					break;
-					}
+        // RIFF group handling
+        if (search_spec[i].type == RIFF || get_mode(s, mode_write_all)) {
+            for (int j = 0; j < 2; j++) {
+                if (!strstr(path, riff[j])) {
+                    snprintf(path, sizeof(path), "%s/%s",
+                             get_output_directory(s), riff[j]);
+                    make_new_directory(s, path);
+                }
+            }
+        }
 
-				}
-			}
-
-		if (search_spec[i].type == EXE)
-			{
-			memset(dir_name, 0, MAX_STRING_LENGTH - 1);
-			strcpy(dir_name, get_output_directory(s));
-			strcat(dir_name, "/");
-			strcat(dir_name, "dll");
-			make_new_directory(s, dir_name);
-			}
-
-		if (search_spec[i].type == RIFF)
-			{
-			for (j = 0; j < 2; j++)
-				{
-				if (strstr(ole_types[j], search_spec[i].suffix))
-					continue;
-				memset(dir_name, 0, MAX_STRING_LENGTH - 1);
-				strcpy(dir_name, get_output_directory(s));
-				strcat(dir_name, "/");
-				strcat(dir_name, riff_types[j]);
-				make_new_directory(s, dir_name);
-				}
-			}
-		else if (get_mode(s, mode_write_all))
-			{
-			for (j = 0; j < 2; j++)
-				{
-				if (strstr(search_spec[i].suffix, riff_types[j]))
-					{
-					for (j = 0; j < 2; j++)
-						{
-						if (strstr(ole_types[j], search_spec[i].suffix))
-							continue;
-
-						memset(dir_name, 0, MAX_STRING_LENGTH - 1);
-						strcpy(dir_name, get_output_directory(s));
-						strcat(dir_name, "/");
-						strcat(dir_name, riff_types[j]);
-						make_new_directory(s, dir_name);
-						}
-					break;
-					}
-
-				}
-			}
-
-		if (search_spec[i].type == ZIP)
-			{
-			for (j = 0; j < 8; j++)
-				{
-				if (strstr(ole_types[j], search_spec[i].suffix))
-					continue;
-
-				memset(dir_name, 0, MAX_STRING_LENGTH - 1);
-				strcpy(dir_name, get_output_directory(s));
-				strcat(dir_name, "/");
-				strcat(dir_name, zip_types[j]);
-				make_new_directory(s, dir_name);
-				}
-			}
-		else if (get_mode(s, mode_write_all))
-			{
-			for (j = 0; j < 8; j++)
-				{
-				if (strstr(search_spec[i].suffix, zip_types[j]))
-					{
-					for (j = 0; j < 5; j++)
-						{
-						if (strstr(ole_types[j], search_spec[i].suffix))
-							continue;
-
-						memset(dir_name, 0, MAX_STRING_LENGTH - 1);
-						strcpy(dir_name, get_output_directory(s));
-						strcat(dir_name, "/");
-						strcat(dir_name, zip_types[j]);
-						make_new_directory(s, dir_name);
-						}
-					break;
-					}
-				}
-			}
-
-		}
-
-	return TRUE;
+        // ZIP group handling
+        if (search_spec[i].type == ZIP || get_mode(s, mode_write_all)) {
+            for (int j = 0; j < 8; j++) {
+                if (!strstr(path, zip[j])) {
+                    snprintf(path, sizeof(path), "%s/%s",
+                             get_output_directory(s), zip[j]);
+                    make_new_directory(s, path);
+                }
+            }
+        }
+    }
+    return TRUE;
 }
 
-/*We have found a file so write to disk*/
-int write_to_disk(f_state *s, s_spec *needle, uint64_t len, unsigned char *buf, uint64_t t_offset)
-{
-	char fn[MAX_STRING_LENGTH];
-	FILE *f;
-	FILE *test;
-	long byteswritten = 0;
-	char temp[32];
-	uint64_t block = ((t_offset) / s->block_size);
-	int i = 1;
-	char filename_col[32] = {0};
+// Write recovered data to disk, handle naming and optional VT lookup
+int write_to_disk(f_state *s, s_spec *nd,
+                  uint64_t len, unsigned char *buf,
+                  uint64_t t_off) {
+    char fn[MAX_STRING_LENGTH], col[32] = {0}, tmp[32];
+    char dir_only[MAX_STRING_LENGTH];
+    uint64_t blk = t_off / s->block_size;
+    int idx = 1;
+    FILE *f, *tst;
+    long w;
 
-	needle->written = TRUE;
+    nd->written = TRUE;
+    snprintf(nd->vt_label, sizeof(nd->vt_label), "N/A");
 
-	snprintf(needle->vt_label, sizeof(needle->vt_label), "N/A");
+    if (get_mode(s, mode_write_audit)) {
+        if (!nd->comment[0]) strcpy(nd->comment, " ");
+        snprintf(col, sizeof(col), "%08" PRIu64 ".%s", blk, nd->suffix);
+        audit_msg(s, "%2d: %-20s %10s %12llu  %-24s  %-15s",
+                  s->fileswritten, col,
+                  human_readable(len, tmp),
+                  t_off, nd->comment, nd->vt_label);
+        s->fileswritten++; nd->found++;
+        return TRUE;
+    }
 
-	if (get_mode(s, mode_write_audit)) {
-		if (needle->comment[0] == '\0')
-			strcpy(needle->comment, " ");
+    // Ensure subdir exists
+    snprintf(dir_only, sizeof(dir_only), "%s/%s",
+             s->output_directory, nd->suffix);
+    make_new_directory(s, dir_only);
 
-		snprintf(filename_col, sizeof(filename_col), "%08" PRIu64 ".%s", block, needle->suffix);
-		audit_msg(s, "%2d: %-20s %10s %12llu  %-24s  %-15s",
-			s->fileswritten,
-			filename_col,
-			human_readable(len, temp),
-			t_offset,
-			needle->comment,
-			needle->vt_label);
+    // Build initial filename
+    snprintf(fn, sizeof(fn), "%s/%s/%0*" PRIu64 ".%s",
+             s->output_directory, nd->suffix,
+             8, blk, nd->suffix);
 
-		s->fileswritten++;
-		needle->found++;
-		return TRUE;
-	}
+    tst = fopen(fn, "rb");
+    while (tst) {
+        fclose(tst);
+        idx++;
+        snprintf(fn, sizeof(fn),
+                 "%s/%s/%0*" PRIu64 "_%d.%s",
+                 s->output_directory, nd->suffix,
+                 8, blk, idx, nd->suffix);
+        tst = fopen(fn, "rb");
+    }
 
-	snprintf(fn, MAX_STRING_LENGTH,
-		"%s/%s/%0*" PRIu64 ".%s",
-		s->output_directory,
-		needle->suffix,
-		8,
-		block,
-		needle->suffix);
+    // Try to open for writing; on failure, show path then abort
+    if (!(f = fopen(fn, "wb"))) {
+        printf("fn = %s  failed\n", fn);
+        fatal_error(s, "Can't open file for writing \n");
+    }
 
-	test = fopen(fn, "rb");
-	while (test) {
-		memset(fn, 0, MAX_STRING_LENGTH - 1);
-		snprintf(fn, MAX_STRING_LENGTH - 1,
-			"%s/%s/%0*" PRIu64 "_%d.%s",
-			s->output_directory,
-			needle->suffix,
-			8,
-			block,
-			i,
-			needle->suffix);
+    // Write and close
+    w = fwrite(buf, 1, len, f);
+    if (w != (long)len) {
+        fatal_error(s, "Write error\n");
+    }
 
-		i++;
-		fclose(test);
-		test = fopen(fn, "rb");
-	}
+    if (fclose(f)) {
+        fatal_error(s, "Close error\n");
+    }
 
-	if (!(f = fopen(fn, "wb"))) {
-		printf("fn = %s  failed\n", fn);
-		fatal_error(s, "Can't open file for writing \n");
-	}
+    if (!nd->comment[0]) {
+        strcpy(nd->comment, " ");
+    }
 
-	if ((byteswritten = fwrite(buf, sizeof(char), len, f)) != len) {
-		fprintf(stderr, "fn=%s bytes=%lu\n", fn, byteswritten);
-		fatal_error(s, "Error writing file\n");
-	}
+    // VirusTotal check
+    if (get_mode(s, mode_virustotal)) {
+        char sha256[65];
+        VTResult vt = {0};
+        sha_checksum(fn, "sha256", sha256);
+        vt = vt_check_hash(sha256);
+        snprintf(nd->vt_label, sizeof(nd->vt_label),
+                 vt.is_malicious ? "Malicious (%d)" : "Clean (%d)",
+                 vt.is_malicious ? vt.malicious_count : vt.undetected_count);
+    }
 
-	if (fclose(f)) {
-		fatal_error(s, "Error closing file\n");
-	}
+    // Final audit log
+    if (idx == 1) {
+        snprintf(col, sizeof(col), "%08" PRIu64 ".%s", blk, nd->suffix);
+    } else {
+        snprintf(col, sizeof(col), "%08" PRIu64 "_%d.%s", blk, idx-1, nd->suffix);
+    }
 
-	if (needle->comment[0] == '\0')
-		strcpy(needle->comment, " ");
+    audit_msg(s, "%4d: %-20s %10s %12llu  %-24s  %-15s",
+              s->fileswritten, col,
+              human_readable(len, tmp),
+              t_off, nd->comment, nd->vt_label);
 
-	if (get_mode(s, mode_virustotal)) {
-		char sha256[65];
-		VTResult vt = {0};
-
-		sha_checksum(fn, "sha256", sha256);
-		vt = vt_check_hash(sha256);
-
-		if (vt.is_malicious) {
-			snprintf(needle->vt_label, sizeof(needle->vt_label), "Malicious (%d)", vt.malicious_count);
-		} else {
-			snprintf(needle->vt_label, sizeof(needle->vt_label), "Clean (%d)", vt.undetected_count);
-		}
-	}
-
-	if (i == 1) {
-		snprintf(filename_col, sizeof(filename_col), "%08" PRIu64 ".%s", block, needle->suffix);
-	} else {
-		snprintf(filename_col, sizeof(filename_col), "%08" PRIu64 "_%d.%s", block, i - 1, needle->suffix);
-	}
-
-	audit_msg(s, "%4d: %-20s %10s %12llu  %-24s  %-15s",
-		s->fileswritten,
-		filename_col,
-		human_readable(len, temp),
-		t_offset,
-		needle->comment,
-		needle->vt_label);
-
-	s->fileswritten++;
-	needle->found++;
-	return TRUE;
+    s->fileswritten++;
+    nd->found++;
+    return TRUE;
 }
