@@ -206,7 +206,7 @@ int write_to_disk(f_state *s, s_spec *nd,
 
     if (get_mode(s, mode_write_audit)) {
         if (!nd->comment[0]) strcpy(nd->comment, " ");
-        snprintf(col, sizeof(col), "%08" PRIu64 ".%s", blk, nd->suffix);
+        snprintf(col, sizeof(col), "%08" PRIu64 ".%s", (uint64_t) blk, nd->suffix);
         audit_msg(s, "%2d: %-20s %10s %12llu  %-24s  %-15s",
                   s->fileswritten, col,
                   human_readable(len, tmp),
@@ -223,7 +223,7 @@ int write_to_disk(f_state *s, s_spec *nd,
     // Build initial filename
     snprintf(fn, sizeof(fn), "%s/%s/%0*" PRIu64 ".%s",
              s->output_directory, nd->suffix,
-             8, blk, nd->suffix);
+             8, (uint64_t) blk, nd->suffix);
 
     tst = fopen(fn, "rb");
     while (tst) {
@@ -232,7 +232,7 @@ int write_to_disk(f_state *s, s_spec *nd,
         snprintf(fn, sizeof(fn),
                  "%s/%s/%0*" PRIu64 "_%d.%s",
                  s->output_directory, nd->suffix,
-                 8, blk, idx, nd->suffix);
+                 8, (uint64_t) blk, idx, nd->suffix);
         tst = fopen(fn, "rb");
     }
 
@@ -269,9 +269,9 @@ int write_to_disk(f_state *s, s_spec *nd,
 
     // Final audit log
     if (idx == 1) {
-        snprintf(col, sizeof(col), "%08" PRIu64 ".%s", blk, nd->suffix);
+        snprintf(col, sizeof(col), "%08" PRIu64 ".%s", (uint64_t) blk, nd->suffix);
     } else {
-        snprintf(col, sizeof(col), "%08" PRIu64 "_%d.%s", blk, idx-1, nd->suffix);
+        snprintf(col, sizeof(col), "%08" PRIu64 "_%d.%s", (uint64_t) blk, idx-1, nd->suffix);
     }
 
     audit_msg(s, "%4d: %-20s %10s %12llu  %-24s  %-15s",
