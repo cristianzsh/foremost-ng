@@ -50,7 +50,7 @@ char *human_readable(off_t size, char *buffer) {
         ++idx;
     }
 
-    snprintf(buffer, 8, "%" PRIuMAX " %s",
+    snprintf(buffer, 32, "%" PRIuMAX " %s",
              (uintmax_t)size, units(idx));
 
     return buffer;
@@ -132,11 +132,11 @@ void print_search_specs(f_state *s) {
     printf("\nDUMPING BUILTIN SEARCH INFO\n\t");
 
     for (int i = 0; i < s->num_builtin; ++i) {
-        printf("%s:\n\t footer_len=%d, header_len=%d, max_len=%" PRIu64 "",
+        printf("%s:\n\t footer_len=%d, header_len=%d, max_len=%" PRIuMAX "",
                search_spec[i].suffix,
                search_spec[i].footer_len,
                search_spec[i].header_len,
-               search_spec[i].max_len);
+               (uintmax_t) search_spec[i].max_len);
         printf("\n\t header:\t");
         printx(search_spec[i].header, 0, search_spec[i].header_len);
         printf("\t footer:\t");

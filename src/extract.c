@@ -1186,8 +1186,8 @@ unsigned char *extract_wmv(f_state *s, uint64_t c_offset, unsigned char *foundat
 
 	if (headerSize <= 0 || numberofHeaderObjects <= 0 || reserved[0] != 1)
 		{
-		printf("WMV err num_header_objs=%d headerSize=%" PRIu64 "\n",
-			   numberofHeaderObjects, (uint64_t)headerSize);
+		printf("WMV err num_header_objs=%d headerSize=%" PRIuMAX "\n",
+			   numberofHeaderObjects, (uintmax_t) headerSize);
 		return foundat;
 		}
 
