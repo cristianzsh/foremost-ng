@@ -18,7 +18,9 @@
 #  include <direct.h>
 #endif
 
-// Return TRUE if directory has only “.” and “..”
+/**
+ * Return TRUE if directory has only “.” and “..”
+ */
 int is_empty_directory(DIR *dir_stream) {
     // Read three entries: if third exists, directory is not empty
     if (readdir(dir_stream) && readdir(dir_stream) && readdir(dir_stream)) {
@@ -28,7 +30,9 @@ int is_empty_directory(DIR *dir_stream) {
     return TRUE;
 }
 
-// Remove any empty subdirectories under the output directory
+/**
+ * Remove any empty subdirectories under the output directory
+ */
 void cleanup_output(f_state *s) {
     char path[MAX_STRING_LENGTH];
     DIR *d = opendir(get_output_directory(s));
@@ -55,7 +59,9 @@ void cleanup_output(f_state *s) {
     closedir(d);
 }
 
-// Make one directory; only error if it fails for reasons other than EEXIST
+/**
+ * Make one directory; only error if it fails for reasons other than EEXIST
+ */
 int make_new_directory(f_state *s, char *fn) {
 #ifdef _WIN32
     if (_mkdir(fn) != 0) {
@@ -72,7 +78,9 @@ int make_new_directory(f_state *s, char *fn) {
     return FALSE;
 }
 
-// Replace spaces and colons in timestamp with underscores
+/**
+ * Replace spaces and colons in timestamp with underscores
+ */
 char *clean_time_string(char *t) {
     for (size_t i = 0; t[i]; i++) {
 #ifdef _WIN32
@@ -89,7 +97,9 @@ char *clean_time_string(char *t) {
     return t;
 }
 
-// Ensure output directory exists and is empty, or create it
+/**
+ * Ensure output directory exists and is empty, or create it
+ */
 int create_output_directory(f_state *s) {
     DIR *d;
     char tmp[MAX_STRING_LENGTH] = {0};
@@ -134,7 +144,9 @@ int create_output_directory(f_state *s) {
     return make_new_directory(s, get_output_directory(s));
 }
 
-// Create subdirectories for each file type (and related types)
+/**
+ * Create subdirectories for each file type (and related types)
+ */
 int create_sub_dirs(f_state *s) {
     char path[MAX_STRING_LENGTH];
     const char ole[7][4]  = { "ppt","doc","xls","sdw","mbd","vis","ole" };
@@ -191,7 +203,9 @@ int create_sub_dirs(f_state *s) {
     return TRUE;
 }
 
-// Write recovered data to disk, handle naming and optional VT lookup
+/**
+ * Write recovered data to disk, handle naming and optional VT lookup
+ */
 int write_to_disk(f_state *s, s_spec *nd,
                   uint64_t len, unsigned char *buf,
                   uint64_t t_off) {

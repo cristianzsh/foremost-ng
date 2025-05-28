@@ -6,8 +6,10 @@
 
 #include "main.h"
 
-// Translates escape sequences in a string (e.g., \n, \t, \xHH) and modifies it in place.
-// Returns the length of the translated string.
+/**
+ * Translates escape sequences in a string (e.g., \n, \t, \xHH) and modifies it in place.
+ * Returns the length of the translated string.
+ */
 int translate(char *str) {
     char next;
     char *rd = str, *wr = str, *bad;
@@ -66,13 +68,17 @@ int translate(char *str) {
     return wr - str;
 }
 
-// Skips whitespace characters at the beginning of a string.
+/**
+ * Skips whitespace characters at the beginning of a string.
+ */
 char *skipWhiteSpace(char *str) {
     while (isspace(str[0])) str++;
     return str;
 }
 
-// Extracts and processes a config line split into tokens.
+/**
+ * Extracts and processes a config line split into tokens.
+ */
 int extractSearchSpecData(f_state *state, char **tokenarray) {
     s_spec *s = &search_spec[state->num_builtin];
 
@@ -113,7 +119,9 @@ int extractSearchSpecData(f_state *state, char **tokenarray) {
     return TRUE;
 }
 
-// Processes a single line from the config file.
+/**
+ * Processes a single line from the config file.
+ */
 int process_line(f_state *s, char *buffer, int line_number) {
     char *buf = buffer;
     char *token;
@@ -195,7 +203,9 @@ int process_line(f_state *s, char *buffer, int line_number) {
     return TRUE;
 }
 
-// Loads the configuration file and processes each line.
+/**
+ * Loads the configuration file and processes each line.
+ */
 int load_config_file(f_state *s) {
     FILE *f;
     char *buffer = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
