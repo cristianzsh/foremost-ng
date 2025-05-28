@@ -1,3 +1,9 @@
+/* FOREMOST-NG
+ *
+ * Originally developed as FOREMOST by Jesse Kornblum, Kris Kendall, & Nick Mikus
+ * Modified and extended by Cristian Souza
+ */
+
 #include "main.h"
 #include "ansi_colors.h"
 #include "vt_query.h"
