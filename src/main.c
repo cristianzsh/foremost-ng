@@ -8,6 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ansi_colors.h"
+#include <unistd.h>
+#include <stdio.h>
+#include <dirent.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -197,7 +200,7 @@ static int is_valid_input(const char *path) {
 int main(int argc, char **argv) {
     f_state *s = malloc(sizeof(f_state));
     int input_files = 0;
-    char **temp = argv;
+    int i;
 
 #ifdef _WIN32
     enable_virtual_terminal_processing();
@@ -227,20 +230,13 @@ int main(int argc, char **argv) {
         set_search_def(s, "all", 0);
     }
 
-    // First pass: count valid input files
-    argv = temp + 1;
-    while (*argv) {
-        if (strcmp(*argv, "-c") == 0) {
-            argv += 2;
-            continue;
-        }
-
-        if (is_valid_input(*argv)) {
+    // First pass: count valid input files (non-option arguments start at optind)
+    for (i = optind; i < argc; i++) {
+        if (is_valid_input(argv[i])) {
             input_files++;
         } else {
-            fprintf(stderr, ANSI_RED "[!] File not found or is a directory: %s\n" ANSI_RESET, *argv);
+            fprintf(stderr, ANSI_RED "[!] File not found or is a directory: %s\n" ANSI_RESET, argv[i]);
         }
-        ++argv;
     }
 
     if (input_files == 0) {
@@ -267,19 +263,11 @@ int main(int argc, char **argv) {
     }
 
     // Second pass: process each valid input file
-    argv = temp + 1;
-    while (*argv) {
-        if (strcmp(*argv, "-c") == 0) {
-            argv += 2;
-            continue;
-        }
-
-        if (is_valid_input(*argv)) {
-            set_input_file(s, *argv);
+    for (i = optind; i < argc; i++) {
+        if (is_valid_input(argv[i])) {
+            set_input_file(s, argv[i]);
             process_file(s);
         }
-
-        ++argv;
     }
 
     print_stats(s);
