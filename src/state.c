@@ -1,3 +1,9 @@
+/* FOREMOST-NG
+ *
+ * Originally developed as FOREMOST by Jesse Kornblum, Kris Kendall, & Nick Mikus
+ * Modified and extended by Cristian Souza
+ */
+
 #include "main.h"
 
 int initialize_state (f_state * s, int argc, char **argv)

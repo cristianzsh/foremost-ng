@@ -1,17 +1,7 @@
 /* FOREMOST-NG
  *
  * Originally developed as FOREMOST by Jesse Kornblum, Kris Kendall, & Nick Mikus
- *
- * This is a work of the US Government. In accordance with 17 USC 105,
- * copyright protection is not available for any work of the US Government.
- *
- * This version, named "foremost-ng", has been modified and extended by Cristian Souza
- * to modernize the codebase and introduce new features.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
+ * Modified and extended by Cristian Souza
  */
  
 //#define DEBUG 1
