@@ -25,7 +25,9 @@
 #endif
 #endif
 
-/* Remove trailing newlines ("\n", "\r") and return new length */
+/**
+ * Remove trailing newlines ("\n", "\r") and return new length
+ */
 unsigned int chop(char *buf) {
     unsigned int len = strlen(buf);
 
@@ -35,13 +37,17 @@ unsigned int chop(char *buf) {
     return len;
 }
 
-/* Return unit string for power-of-1024 scale */
+/**
+ * Return unit string for power-of-1024 scale
+ */
 char *units(unsigned int c) {
     static const char *u[] = {"B", "KB", "MB", "GB", "TB", "PB", "EB"};
     return (c < sizeof(u)/sizeof(u[0])) ? (char*)u[c] : "??";
 }
 
-/* Format size into buffer, e.g. "123 MB". Buffer must be at least 8 bytes. */
+/**
+ * Format size into buffer, e.g. "123 MB". Buffer must be at least 8 bytes.
+ */
 char *human_readable(off_t size, char *buffer) {
     unsigned int idx = 0;
 
@@ -56,7 +62,9 @@ char *human_readable(off_t size, char *buffer) {
     return buffer;
 }
 
-/* Return current local time string without trailing newline */
+/**
+ * Return current local time string without trailing newline
+ */
 char *current_time(void) {
     time_t now = time(NULL);
     char *ts = ctime(&now);
@@ -64,7 +72,9 @@ char *current_time(void) {
     return ts;
 }
 
-/* Shift substring fn[new_start..] to position fn[start] */
+/**
+ * Shift substring fn[new_start..] to position fn[start]
+ */
 void shift_string(char *fn, int start, int new_start) {
     size_t len = strlen(fn);
 
@@ -80,7 +90,9 @@ void shift_string(char *fn, int start, int new_start) {
     }
 }
     
-/* Determine file size for platform variants */
+/**
+ * Determine file size for platform variants
+ */
 #if defined(__UNIX)
 
 off_t find_file_size(FILE *f) {
@@ -127,7 +139,9 @@ off_t find_file_size(FILE *f) {
 
 #endif
 
-/* Print built-in search specs */
+/**
+ * Print built-in search specs
+ */
 void print_search_specs(f_state *s) {
     printf("\nDUMPING BUILTIN SEARCH INFO\n\t");
 
@@ -150,7 +164,9 @@ void print_search_specs(f_state *s) {
     }
 }
 
-/* Print extraction statistics */
+/**
+ * Print extraction statistics
+ */
 void print_stats(f_state *s) {
     audit_msg(s, "\n%d FILES EXTRACTED\n\t", s->fileswritten);
 
@@ -169,7 +185,9 @@ void print_stats(f_state *s) {
     }
 }
 
-/* Match characters with optional wildcard and case sensitivity */
+/**
+ * Match characters with optional wildcard and case sensitivity
+ */
 int charactersMatch(char a, char b, int caseSensitive) {
     if (a == wildcard || a == b) {
         return 1;
@@ -191,7 +209,9 @@ int charactersMatch(char a, char b, int caseSensitive) {
     return a == b;
 }
 
-/* Compare memory blocks with wildcard support */
+/**
+ * Compare memory blocks with wildcard support
+ */
 int memwildcardcmp(const void *s1, const void *s2, size_t n, int caseSensitive) {
     const unsigned char *p1 = s1, *p2 = s2;
 
@@ -204,7 +224,9 @@ int memwildcardcmp(const void *s1, const void *s2, size_t n, int caseSensitive) 
     return 0;
 }
 
-/* Print bytes in hex */
+/**
+ * Print bytes in hex
+ */
 void printx(unsigned char *buf, int start, int end) {
     for (int i = start; i < end; ++i) {
         printf("%02x ", buf[i]);
@@ -213,7 +235,9 @@ void printx(unsigned char *buf, int start, int end) {
     printf("\n");
 }
 
-/* Reverse substring from 'from' into 'to' */
+/**
+ * Reverse substring from 'from' into 'to'
+ */
 char* reverse_string(char *to, char *from, int start, int end) {
     int len = end - start;
 
@@ -224,7 +248,9 @@ char* reverse_string(char *to, char *from, int start, int end) {
     return to;
 }
 
-/* Convert network-order bytes to unsigned short */
+/**
+ * Convert network-order bytes to unsigned short
+ */
 unsigned short htos(unsigned char s[], int endian) {
     unsigned short val;
     memcpy(&val, s, sizeof(val));
@@ -237,7 +263,9 @@ unsigned short htos(unsigned char s[], int endian) {
     return val;
 }
 
-/* Convert network-order bytes to unsigned int */
+/**
+ * Convert network-order bytes to unsigned int
+ */
 unsigned int htoi(unsigned char s[], int endian) {
     unsigned int val;
     memcpy(&val, s, sizeof(val));
@@ -255,7 +283,9 @@ unsigned int htoi(unsigned char s[], int endian) {
     return val;
 }
 
-/* Convert network-order bytes to uint64_t */
+/**
+ * Convert network-order bytes to uint64_t
+ */
 uint64_t htoll(unsigned char s[], int endian) {
     uint64_t val;
     memcpy(&val, s, sizeof(val));
@@ -273,7 +303,9 @@ uint64_t htoll(unsigned char s[], int endian) {
     return val;
 }
 
-/* Display extraction progress */
+/**
+ * Display extraction progress
+ */
 int displayPosition(f_state *s, f_info *i, uint64_t pos) {
     static int last_val = -1;
     int percentDone = 0;

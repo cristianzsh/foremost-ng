@@ -12,7 +12,9 @@
 #include <inttypes.h>
 #include <limits.h>
 
-/* Print animated sliding progress bar */
+/**
+ * Print animated sliding progress bar
+ */
 void print_sliding_bar() {
     static int frame = 0;
     const char *templates[] = {
@@ -24,7 +26,9 @@ void print_sliding_bar() {
     frame = (frame + 1) % (sizeof(templates) / sizeof(templates[0]));
 }
 
-/* Handle user interrupt: close handle, clean up, free and exit */
+/**
+ * Handle user interrupt: close handle, clean up, free and exit
+ */
 int user_interrupt(f_state *s, f_info *i) {
     audit_msg(s, "Interrupt received at %s", current_time());
     fclose(i->handle);
@@ -35,7 +39,9 @@ int user_interrupt(f_state *s, f_info *i) {
     return FALSE;
 }
 
-/* Read length bytes from offset into newly malloc'd buffer */
+/**
+ * Read length bytes from offset into newly malloc'd buffer
+ */
 unsigned char *read_from_disk(uint64_t offset, f_info *i, uint64_t length) {
     unsigned char *newbuf = malloc(length);
     if (!newbuf) {
@@ -52,7 +58,9 @@ unsigned char *read_from_disk(uint64_t offset, f_info *i, uint64_t length) {
     return newbuf;
 }
 
-/* Perform modified Boyer-Moore search with wildcards and custom start */
+/**
+ * Perform modified Boyer-Moore search with wildcards and custom start
+ */
 unsigned char *bm_search_skipn(
     unsigned char *needle, size_t needle_len,
     unsigned char *haystack, size_t haystack_len,
@@ -104,7 +112,9 @@ unsigned char *bm_search_skipn(
     return NULL;
 }
 
-/* Wrapper: start Boyer-Moore at needle_len - 1 */
+/**
+ * Wrapper: start Boyer-Moore at needle_len - 1
+ */
 unsigned char *bm_search(
     unsigned char *needle, size_t needle_len,
     unsigned char *haystack, size_t haystack_len,
@@ -117,7 +127,9 @@ unsigned char *bm_search(
     );
 }
 
-/* Set up reading stream: skip bytes and log sizes */
+/**
+ * Set up reading stream: skip bytes and log sizes
+ */
 void setup_stream(f_state *s, f_info *i) {
     char buffer[MAX_STRING_LENGTH];
     uint64_t skip = (uint64_t)s->skip * s->block_size;
@@ -155,7 +167,9 @@ void setup_stream(f_state *s, f_info *i) {
 #endif
 }
 
-/* Print column headers for audit output */
+/**
+ * Print column headers for audit output
+ */
 void audit_layout(f_state *s) {
     char name_col[32];
     snprintf(name_col, sizeof(name_col), "Name (bs=%d)", s->block_size);
@@ -166,7 +180,9 @@ void audit_layout(f_state *s) {
     );
 }
 
-/* Dump indirect block values for debugging */
+/**
+ * Dump indirect block values for debugging
+ */
 void dumpInd(unsigned char *ind, int bs) {
     int i = 0;
     printf("\n/*******************************/\n");
@@ -181,7 +197,9 @@ void dumpInd(unsigned char *ind, int bs) {
     printf("\n/*******************************/\n");
 }
 
-/* Check if buffer at foundat represents a valid indirect block */
+/**
+ * Check if buffer at foundat represents a valid indirect block
+ */
 int ind_block(unsigned char *foundat, uint64_t buflen, int bs) {
     unsigned char *temp = foundat;
     int jump = 12 * bs;                         /* Offset to pointers */
@@ -213,7 +231,9 @@ int ind_block(unsigned char *foundat, uint64_t buflen, int bs) {
     return TRUE;
 }
 
-/* Search a chunk for all file types and extract matches */
+/**
+ * Search a chunk for all file types and extract matches
+ */
 int search_chunk(
     f_state *s, unsigned char *buf, f_info *i,
     uint64_t chunk_size, uint64_t f_offset
@@ -357,7 +377,9 @@ int search_chunk(
     return TRUE;
 }
 
-/* Read file in chunks and process each chunk */
+/**
+ * Read file in chunks and process each chunk
+ */
 int search_stream(f_state *s, f_info *i) {
     uint64_t bytesread = 0, f_offset = 0;
     uint64_t chunk_size = (uint64_t)s->chunk_size * MEGABYTE;
@@ -391,7 +413,9 @@ int search_stream(f_state *s, f_info *i) {
     return FALSE;
 }
 
-/* Log start of processing for a file or stdin */
+/**
+ * Log start of processing for a file or stdin
+ */
 void audit_start(f_state *s, f_info *i) {
     if (!get_mode(s, mode_quiet)) {
         fprintf(stderr, ANSI_BOLD ANSI_BLUE "[INFO] Processing: %s\n" ANSI_RESET,
@@ -402,12 +426,16 @@ void audit_start(f_state *s, f_info *i) {
     audit_msg(s, "Start: %s", current_time());
 }
 
-/* Log finish time of processing */
+/**
+ * Log finish time of processing
+ */
 void audit_finish(f_state *s, f_info *i) {
     audit_msg(s, "Finish: %s", current_time());
 }
 
-/* Open input file, determine size, run processing, then clean up */
+/**
+ * Open input file, determine size, run processing, then clean up
+ */
 int process_file(f_state *s) {
     f_info *i = malloc(sizeof(f_info));
     char temp[PATH_MAX];
