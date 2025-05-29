@@ -55,8 +55,7 @@ CC = $(RAW_CC) $(RAW_FLAGS) -D__UNIX
 HEADER_FILES = main.h ole.h extract.h vt_query.h
 SRC = main.c state.c helpers.c config.c cli.c engine.c dir.c extract.c api.c vt_query.c
 OBJ = main.o state.o helpers.o config.o cli.o engine.o dir.o extract.o api.o vt_query.o
-DOCS = Makefile README CHANGES $(MAN_PAGES) foremost.conf
-WINDOC = README.txt CHANGES.txt
+DOCS = Makefile $(MAN_PAGES) foremost.conf
 MAN_PAGES = $(NAME).8.gz
 
 #---------------------------------------------------------------------
@@ -136,14 +135,14 @@ macuninstall: uninstall
 #---------------------------------------------------------------------
 
 preflight:
-	grep -n RBF *.1 *.h *.c README CHANGES
+	grep -n RBF *.1 *.h *.c
 
 nice:
 	rm -f -- *~
 
 clean: nice
 	rm -f -- *.o
-	rm -f -- $(CR_GOAL) $(NAME) $(WINDOC)
+	rm -f -- $(CR_GOAL) $(NAME)
 	rm -f -- $(TAR_FILE).gz $(DEST_DIR).zip $(DEST_DIR).zip.gpg
 
 #---------------------------------------------------------------------
@@ -163,16 +162,10 @@ package: clean
 	rm -rf $(DEST_DIR)
 	gzip $(TAR_FILE)
 
-win-doc:
-	/usr/bin/tbl ./$(MD5GOAL).1 | /usr/bin/groff -S -Wall -mtty-char -mandoc -Tascii | /usr/bin/col > README.txt
-	cp CHANGES CHANGES.txt
-	flip -d $(WINDOC)
-
-cross-pkg: clean cross win-doc
+cross-pkg: clean cross
 	rm -f $(DEST_DIR).zip
-	zip $(DEST_DIR).zip $(CR_GOAL) $(WINDOC)
-	rm -f $(WINDOC)
+	zip $(DEST_DIR).zip $(CR_GOAL)
 
 world: package cross-pkg
 
-.PHONY: all clean install uninstall macinstall macuninstall package cross-pkg win-doc goals
+.PHONY: all clean install uninstall macinstall macuninstall package cross-pkg goals
