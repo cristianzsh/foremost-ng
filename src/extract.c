@@ -1221,7 +1221,7 @@ unsigned char *extract_bmp(f_state *s, uint64_t c_offset, unsigned char *foundat
            dataOffset);
 #endif
     if (size <= buflen) {
-        sprintf(comment, " (%d x %d)", h_size, v_size);
+        sprintf(comment, "(%d x %d)", h_size, v_size);
         strcat(needle->comment, comment);
 
         file_size = size;
@@ -1256,7 +1256,7 @@ unsigned char *extract_gif(f_state *s, uint64_t c_offset, unsigned char *foundat
         width = htos(foundat, FOREMOST_LITTLE_ENDIAN);
         height = htos(&foundat[2], FOREMOST_LITTLE_ENDIAN);
 
-        sprintf(comment, " (%d x %d)", width, height);
+        sprintf(comment, "(%d x %d)", width, height);
         strcat(needle->comment, comment);
 
         // currentpos = foundat;
@@ -1540,7 +1540,7 @@ unsigned char *extract_png(f_state *s, uint64_t c_offset, unsigned char *foundat
         return foundat;
     }
 
-    sprintf(comment, " (%d x %d)", width, height);
+    sprintf(comment, "(%d x %d)", width, height);
     strcat(needle->comment, comment);
 
     // Jump through the headers until we reach the "data" part of the file
@@ -1619,10 +1619,10 @@ unsigned char *extract_jpeg(f_state *s, uint64_t c_offset, unsigned char *founda
 
     if (foundat[3] == (unsigned char)'\xe0') {
         // JFIF header
-        // sprintf(comment," (JFIF)");
+        // sprintf(comment,"(JFIF)");
         // strcat(needle->comment,comment);
     } else if (foundat[3] == (unsigned char)'\xe1') {
-        // sprintf(comment," (EXIF)");
+        // sprintf(comment,"(EXIF)");
         // strcat(needle->comment,comment);
     } else {
         return foundat + needle->header_len; // Invalid keep searching

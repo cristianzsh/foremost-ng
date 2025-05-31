@@ -20,7 +20,9 @@ int highblk = 0;
 int block_list[OUR_BLK_SIZE / sizeof(int)];
 // extern int errno;
 
-/* Inititialize those globals used by extract_ole */
+/**
+ * Inititialize those globals used by extract_ole
+ */
 void init_ole() {
     int i = 0;
     extract = 0;
@@ -41,6 +43,10 @@ void init_ole() {
     }
 }
 
+/**
+ * Wrapper around malloc that exits with an
+ * error message if allocation fails.
+ */
 void *Malloc(size_t bytes) {
     void *x;
 
@@ -53,11 +59,19 @@ void *Malloc(size_t bytes) {
     return 0;
 }
 
+/**
+ * Print a formatted error message
+ * to stderr and exit the program.
+ */
 void die(char *fmt, void *arg) {
     fprintf(stderr, fmt, arg);
     exit(1);
 }
 
+/**
+ * Read an OLE directory block from fd at block number blknum into dest;
+ * return TRUE if full block contains only entries.
+ */
 int get_dir_block(unsigned char *fd, int blknum, int buffersize) {
     int i;
     struct OLE_DIR *dir;
@@ -82,6 +96,10 @@ int get_dir_block(unsigned char *fd, int blknum, int buffersize) {
     }
 }
 
+/**
+ * Parse each directory entry in the OLE block src, populating dirlist[]
+ * entries and returning TRUE if all entries valid.
+ */
 int get_dir_info(unsigned char *src) {
     int i, j;
     char *p, *q;
@@ -190,6 +208,10 @@ int get_dir_info(unsigned char *src) {
     return TRUE;
 }
 
+/**
+ * Recursively reorder dirlist[] starting at the given directory
+ * entry to set levels and rebuild next/prev links.
+ */
 static int *lnlv;
 int reorder_dirlist(struct DIRECTORY *dir, int level) {
     // printf("  Reordering the dirlist\n");
@@ -227,6 +249,10 @@ int reorder_dirlist(struct DIRECTORY *dir, int level) {
     return 1;
 }
 
+/**
+ * Copy the OLE block at block number blknum from fd into dest;
+ * return TRUE on success.
+ */
 int get_block(unsigned char *fd, int blknum, unsigned char *dest, long long int buffersize) {
     unsigned char *temp = fd;
     int i = 0;
@@ -254,6 +280,10 @@ int get_block(unsigned char *fd, int blknum, unsigned char *dest, long long int 
     return TRUE;
 }
 
+/**
+ * Return a pointer to the OLE block at blknum within fd (no copying);
+ * returns FALSE if out of bounds.
+ */
 unsigned char *get_ole_block(unsigned char *fd, int blknum, unsigned long long buffersize) {
     unsigned long long  jump = (unsigned long long)OUR_BLK_SIZE * (unsigned long long)(blknum + 1);
     if (blknum < -1 || jump < 0 || blknum > buffersize || buffersize < jump) {
@@ -269,6 +299,10 @@ unsigned char *get_ole_block(unsigned char *fd, int blknum, unsigned long long b
     return (fd + jump);
 }
 
+/**
+ * Fetch a FAT block for blknum: read the corresponding FAT
+ * sector into dest if it hasn't already been loaded.
+ */
 int get_FAT_block(unsigned char *fd, int blknum, int *dest, int buffersize) {
     static int FATblk;
 
@@ -291,6 +325,9 @@ int get_FAT_block(unsigned char *fd, int blknum, int *dest, int buffersize) {
     return TRUE;
 }
 
+/**
+ * Print OLE header fields to stderr.
+ */
 void dump_header(struct OLE_HDR *h) {
     int i, *x;
 
@@ -345,6 +382,10 @@ void dump_header(struct OLE_HDR *h) {
     fprintf(stderr, "\n **************End of header***********\n");
 }
 
+/**
+ * Copy all multi-byte fields of an OLE header from h into dest,
+ * converting little-endian to host-endian.
+ */
 struct OLE_HDR *reverseBlock(struct OLE_HDR *dest, struct OLE_HDR *h) {
     int i, *x, *y;
     dest->uMinorVersion = htos((unsigned char *) &h->uMinorVersion, FOREMOST_LITTLE_ENDIAN);
@@ -375,6 +416,10 @@ struct OLE_HDR *reverseBlock(struct OLE_HDR *dest, struct OLE_HDR *h) {
     return dest;
 }
 
+/**
+ * Print OLE header fields (same as dump_header)
+ * with byte-order conversions.
+ */
 void dump_ole_header(struct OLE_HDR *h) {
     int i, *x;
 
@@ -428,6 +473,10 @@ void dump_ole_header(struct OLE_HDR *h) {
     fprintf(stderr, "\n **************End of header***********\n");
 }
 
+/**
+ * Print the specified directory entry (index which_one)
+ * from the global buffer.
+ */
 int dump_dirent(int which_one) {
     int i;
     char *p;
