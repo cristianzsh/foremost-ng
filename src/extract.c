@@ -19,12 +19,10 @@ extern int extract;
 extern int FATblk;
 extern int highblk;
 
-/********************************************************************************
- *Function: extract_zip
- *Description: Given that we have a ZIP header jump through the file headers
-    until we reach the EOF.
- *Return: A pointer to where the EOF of the ZIP is in the current buffer
-**********************************************************************************/
+/**
+ * Locate and extract a ZIP (or OOXML/OpenOffice) archive by scanning local file headers until
+ * the central directory/footer is reached.
+ */
 unsigned char *extract_zip(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset, char *type) {
     unsigned char *currentpos = NULL;
@@ -62,7 +60,7 @@ unsigned char *extract_zip(f_state *s, uint64_t c_offset, unsigned char *foundat
         needle->suffix = "zip";
     }
 
-    // //Jump through each local file header until the central directory structure is reached, much faster than searching
+    // Jump through each local file header until the central directory structure is reached, much faster than searching
     while (1) {
         // Verfiy we are looking at a local file header
         if (foundat[2] == '\x03' && foundat[3] == '\x04') {
@@ -223,12 +221,10 @@ unsigned char *extract_zip(f_state *s, uint64_t c_offset, unsigned char *foundat
     return currentpos;
 }
 
-/********************************************************************************
- *Function: extract_pdf
- *Description: Given that we have a PDF header check if it is Linearized, if so
-    grab the file size and we are done, else search for the %%EOF
-*Return: A pointer to where the EOF of the PDF is in the current buffer
-**********************************************************************************/
+/**
+ * Detect if a PDF is linearized (by looking for the "/L " marker), grab file size if so,
+ * otherwise search for %%EOF and extract.
+ */
 unsigned char *extract_pdf(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     unsigned char *currentpos = NULL;
@@ -384,11 +380,10 @@ unsigned char *extract_pdf(f_state *s, uint64_t c_offset, unsigned char *foundat
     }
 }
 
-/********************************************************************************
- *Function: extract_cpp
- *Description: Use keywords to attempt to find C/C++ source code
-*Return: A pointer to where the EOF of the CPP file is in the current buffer
-**********************************************************************************/
+/**
+ * Identify a C/C++ source file by looking for #include and ASCII text, then search for a
+ * closing marker and dump the whole ASCII block.
+ */
 unsigned char *extract_cpp(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     unsigned char *header = foundat;
@@ -475,12 +470,10 @@ unsigned char *extract_cpp(f_state *s, uint64_t c_offset, unsigned char *foundat
     return NULL;
 }
 
-/********************************************************************************
- *Function: extract_htm
- *Description: Given that we have a HTM header
-    search for the file EOF and check that the bytes areound the header are ascii
-*Return: A pointer to where the EOF of the HTM is in the current buffer
-**********************************************************************************/
+/**
+ * After seeing an HTML header (<HTML>), verify the next bytes are printable
+ * ASCII and search forward for </HTML> to extract the page.
+ */
 unsigned char *extract_htm(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat;
@@ -530,12 +523,10 @@ unsigned char *extract_htm(f_state *s, uint64_t c_offset, unsigned char *foundat
     }
 }
 
-/********************************************************************************
- *Function: validOLEheader
- *Description: run various tests aginst an OLE-HEADER to determine whether or not
-    it is valid.
-*Return: TRUE/FALSE
-**********************************************************************************/
+/**
+ * Check basic OLE header fields (reserved, sector shifts, FAT counts)
+ * to decide whether an OLE container looks valid.
+ */
 int valid_ole_header(struct OLE_HDR *h) {
 
     if (htos((unsigned char *) &h->reserved, FOREMOST_LITTLE_ENDIAN) != 0 ||
@@ -565,12 +556,10 @@ int valid_ole_header(struct OLE_HDR *h) {
     return TRUE;
 }
 
-/********************************************************************************
- *Function:checkOleName
- *Description: Determine what type of file is stored in the OLE format based on the
-    names of DIRENT in the FAT table.
-*Return: A char* consisting of the suffix of the appropriate file.
-**********************************************************************************/
+/**
+ * Given a stream name from an OLE directory entry,
+ * return the likely file extension (e.g., "doc", "xls", "ppt") or NULL.
+ */
 char *check_ole_name(char *name) {
     if (strstr(name, "WordDocument")) {
         return "doc";
@@ -591,6 +580,12 @@ char *check_ole_name(char *name) {
     return NULL;
 }
 
+/**
+ * Round a byte count up to the next
+ * multiple of block‐size 'bs', used
+ * when summing up sector/stream sizes
+ * inside OLE.
+ */
 int adjust_bs(int size, int bs) {
     int rem = (size % bs);
 
@@ -604,12 +599,10 @@ int adjust_bs(int size, int bs) {
     return (size + (bs - rem));
 }
 
-/********************************************************************************
- *Function: extract_ole
- *Description: Given that we have a OLE header, jump through the OLE structure and
-    determine what type of file it is.
-*Return: A pointer to where the EOF of the OLE is in the current buffer
-**********************************************************************************/
+/**
+ * Parse an OLE container's FAT and directory entries, compute the total size of all streams,
+ * infer file type (e.g., doc/xls/ppt) and extract accordingly.
+ */
 unsigned char *extract_ole(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset, char *type) {
     unsigned char *buf = foundat;
@@ -901,7 +894,10 @@ unsigned char *extract_ole(f_state *s, uint64_t c_offset, unsigned char *foundat
     return foundat;
 }
 
-//********************************************************************************/
+/**
+ * Simple helper to test whether a 4‐byte "atom" label inside an MOV/MP4 stream
+ * is one of the known valid atom types (e.g., "mdat", "trak").
+ */
 int check_mov(unsigned char *atom) {
 #ifdef DEBUG
     printf("Atom:= %c%c%c%c\n", atom[0], atom[1], atom[2], atom[3]);
@@ -921,12 +917,10 @@ int check_mov(unsigned char *atom) {
     return FALSE;
 }
 
-/********************************************************************************
- *Function: extract_mov
- *Description: Given that we have a MOV header JUMP through the mov data structures
-    until we reach EOF
-*Return: A pointer to where the EOF of the MOV is in the current buffer
-**********************************************************************************/
+/**
+ * Walk through successive MOV "atom" headers (reading size fields)
+ * until the mdat/data atom is done, then extract the entire MOV.
+ */
 unsigned char *extract_mov(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat - 4;
@@ -1011,12 +1005,10 @@ unsigned char *extract_mov(f_state *s, uint64_t c_offset, unsigned char *foundat
     return NULL;
 }
 
-/********************************************************************************
- *Function: extract_wmv
- *Description: Given that we have a WMV header
-    search for the file header and grab the file size.
-*Return: A pointer to where the EOF of the WMV is in the current buffer
-**********************************************************************************/
+/**
+ * After finding a WMV header, parse the Windows Media header
+ * objects to locate the file size, then extract the whole WMV.
+ */
 unsigned char *extract_wmv(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     //unsigned char *currentpos = NULL;
@@ -1115,11 +1107,10 @@ unsigned char *extract_wmv(f_state *s, uint64_t c_offset, unsigned char *foundat
     return NULL;
 }
 
-/********************************************************************************
- *Function: extract_riff
- *Description: Given that we have a RIFF header parse header and grab the file size.
- *Return: A pointer to where the EOF of the RIFF is in the current buffer
- **********************************************************************************/
+/**
+ * Read the little‐endian size field in a RIFF header; if it's AVI or
+ * WAVE and within limits, extract that many bytes and write it out.
+ */
 unsigned char *extract_riff(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                             s_spec *needle, uint64_t f_offset, char *type) {
     unsigned char *buf = foundat;
@@ -1174,11 +1165,10 @@ unsigned char *extract_riff(f_state *s, uint64_t c_offset, unsigned char *founda
     return NULL;
 }
 
-/********************************************************************************
- *Function: extract_bmp
- *Description: Given that we have a BMP header parse header and grab the file size.
- *Return: A pointer to where the EOF of the BMP is in the current buffer
- **********************************************************************************/
+/**
+ * Parse a BMP header (check total file length, image dimensions),
+ * append a (width x height) comment, and dump it if it fits.
+ */
 unsigned char *extract_bmp(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat;
@@ -1244,12 +1234,10 @@ unsigned char *extract_bmp(f_state *s, uint64_t c_offset, unsigned char *foundat
     return NULL;
 }
 
-/********************************************************************************
- *Function: extract_gif
- *Description: Given that we have a GIF header parse the given buffer to determine
- *  where the file ends.
- *Return: A pointer to where the EOF of the GIF is in the current buffer
- **********************************************************************************/
+/**
+ * Verify GIF signature (GIF87a or GIF89a), read width/height,
+ * search for the trailer (0x3B), and extract the entire GIF.
+ */
 unsigned char *extract_gif(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat;
@@ -1306,10 +1294,11 @@ unsigned char *extract_gif(f_state *s, uint64_t c_offset, unsigned char *foundat
     }
 }
 
-/********************************************************************************
- *Function: extract_mpg
- * Not done yet
- **********************************************************************************/
+/**
+ * Scan MPEG (MPG) packet markers (0xBB/0xB9, etc.),
+ * follow PES packet size fields until a sequence end, then extract.
+ * (Work in-progress)
+ */
 unsigned char *extract_mpg(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat;
@@ -1457,10 +1446,11 @@ unsigned char *extract_mpg(f_state *s, uint64_t c_offset, unsigned char *foundat
     return foundat;
 }
 
-/********************************************************************************
- *Function: extract_mp4
- * Not done yet
- **********************************************************************************/
+/**
+ * Loop over MP4 boxes by reading size/type fields at offset 28,
+ * stopping when box size = 0, then extract up to the last recognized footer.
+ * (Work in-progress)
+ */
 unsigned char *extract_mp4(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat;
@@ -1518,12 +1508,10 @@ unsigned char *extract_mp4(f_state *s, uint64_t c_offset, unsigned char *foundat
     return foundat;
 }
 
-/********************************************************************************
- *Function: extract_png
- *Description: Given that we have a PNG header parse the given buffer to determine
- *  where the file ends.
- *Return: A pointer to where the EOF of the PNG is in the current buffer
- **********************************************************************************/
+/**
+ * Read the PNG IHDR chunk (width/height), append (w x h) to the comment,
+ * then loop through chunks until IEND to extract the PNG.
+ */
 unsigned char *extract_png(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat;
@@ -1606,12 +1594,10 @@ unsigned char *extract_png(f_state *s, uint64_t c_offset, unsigned char *foundat
     return NULL;
 }
 
-/********************************************************************************
- *Function: extract_jpeg
- *Description: Given that we have a JPEG header parse the given buffer to determine
- *  where the file ends.
- *Return: A pointer to where the EOF of the JPEG is in the current buffer
- **********************************************************************************/
+/**
+ * Verify JFIF/EXIF marker (0xE0/0xE1), skip through quantization/Huffman tables,
+ * search for JPEG EOI (0xFFD9), and then extract the JPEG.
+ */
 unsigned char *extract_jpeg(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                             s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat;
@@ -1726,11 +1712,10 @@ unsigned char *extract_jpeg(f_state *s, uint64_t c_offset, unsigned char *founda
     }
 }
 
-/********************************************************************************
- *Function: extract_generic
- *Description:
- *Return: A pointer to where the EOF of the
- **********************************************************************************/
+/**
+ * For a "generic" file type: depending on search type (ASCII, next header,
+ * or forward‐search footer), find an end marker (or max length) and dump that range.
+ */
 unsigned char *extract_generic(f_state *s, uint64_t c_offset, unsigned char *foundat,
                                uint64_t buflen, s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat;
@@ -1836,11 +1821,10 @@ unsigned char *extract_generic(f_state *s, uint64_t c_offset, unsigned char *fou
     return foundat;
 }
 
-/********************************************************************************
- *Function: extract_exe
- *Description:
- *Return: A pointer to where the EOF of the
- **********************************************************************************/
+/**
+ * Parse a PE header: find the PE\0\0 offset, read section table to compute
+ * total image size, append compile timestamp comment, and extract EXE or DLL.
+ */
 unsigned char *extract_exe(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat;
@@ -1972,11 +1956,10 @@ unsigned char *extract_exe(f_state *s, uint64_t c_offset, unsigned char *foundat
     return (buf + file_size);
 }
 
-/********************************************************************************
- *Function: extract_reg
- *Description:
- *Return: A pointer to where the EOF of the
- **********************************************************************************/
+/**
+ * Read the Windows registry REGF header's size field (at offset 0x28)
+ * and extract exactly that many bytes as a .reg structure.
+ */
 unsigned char *extract_reg(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat;
@@ -1998,11 +1981,10 @@ unsigned char *extract_reg(f_state *s, uint64_t c_offset, unsigned char *foundat
     return NULL;
 }
 
-/********************************************************************************
- *Function: extract_rar
- *Description:
- *Return: A pointer to where the EOF of the
- **********************************************************************************/
+/**
+ * Walk through RAR block headers (marker, archive, file headers),
+ * handle multi‐volume or encrypted headers if present, then find the RAR EOF and dump.
+ */
 unsigned char *extract_rar(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                            s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat;
@@ -2159,6 +2141,10 @@ unsigned char *extract_rar(f_state *s, uint64_t c_offset, unsigned char *foundat
     return NULL;
 }
 
+/**
+ * Dispatcher that calls the appropriate extract_*
+ * function based on needle->type (JPEG, PNG, AVI, ZIP, OLE, etc.).
+ */
 unsigned char *extract_file(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
                             s_spec *needle, uint64_t f_offset) {
     if (needle->type == JPEG) {

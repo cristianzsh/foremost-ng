@@ -25,6 +25,9 @@ struct MemoryStruct {
     size_t size;
 };
 
+/**
+ * Retrieve the VirusTotal API key from the environment variables.
+ */
 const char *get_api_key() {
 #ifdef _WIN32
     static char buffer[512];
@@ -36,6 +39,9 @@ const char *get_api_key() {
 #endif
 }
 
+/**
+ * Compute the SHA-1 or SHA-256 checksum of the given file.
+ */
 void sha_checksum(const char *filename, const char *algo, char *outputBuffer) {
     FILE *file = NULL;
 
@@ -105,6 +111,9 @@ void sha_checksum(const char *filename, const char *algo, char *outputBuffer) {
     outputBuffer[hashLen * 2] = '\0';
 }
 
+/**
+ * libcurl write callback.
+ */
 static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
     size_t realsize = size * nmemb;
     struct MemoryStruct *mem = (struct MemoryStruct *)userp;
@@ -120,6 +129,10 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
     return realsize;
 }
 
+/**
+ * Query VirusTotal for the given file hash, parse last_analysis_stats
+ * to fill VTResult.
+ */
 VTResult vt_check_hash(const char *hash) {
     VTResult result = {0, 0, 0};
 

@@ -6,6 +6,10 @@
 
 #include "main.h"
 
+/**
+ * Initialize the f_state structure with defaults, record start time,
+ * config/output paths, and store command‐line invocation.
+ */
 int initialize_state (f_state * s, int argc, char **argv) {
     char **argv_copy = argv;
 
@@ -40,28 +44,48 @@ int initialize_state (f_state * s, int argc, char **argv) {
     return FALSE;
 }
 
+/**
+ * Free dynamically allocated fields in f_state
+ * (start_time, output_directory, config_file).
+ */
 void free_state(f_state *s) {
     free(s->start_time);
     free(s->output_directory);
     free(s->config_file);
 }
 
+/**
+ * Return whether the audit file is currently open (0 or 1).
+ */
 int get_audit_file_open(f_state *s) {
     return (s->audit_file_open);
 }
 
+/**
+ * Return the stored invocation string (full command line) from f_state.
+ */
 char *get_invocation(f_state *s) {
     return (s->invocation);
 }
 
+/**
+ * Return the stored start_time string from f_state.
+ */
 char *get_start_time(f_state *s) {
     return (s->start_time);
 }
 
+/**
+ * Return the stored config_file path from f_state.
+ */
 char *get_config_file(f_state *s) {
     return (s->config_file);
 }
 
+/**
+ * Set s->config_file to the realpath of fn (strdup'ed),
+ * ignoring errors if fn doesn't yet exist.
+ */
 int set_config_file(f_state *s, char *fn) {
     char temp[PATH_MAX];
 
@@ -75,10 +99,16 @@ int set_config_file(f_state *s, char *fn) {
     return FALSE;
 }
 
+/**
+ * Return the stored output_directory path from f_state.
+ */
 char *get_output_directory(f_state *s) {
     return (s->output_directory);
 }
 
+/**
+ * Set s->output_directory to the realpath of fn (fallback to fn if realpath fails).
+ */
 int set_output_directory(f_state *s, char *fn) {
     char temp[PATH_MAX];
     int fullpathlen = 0;
@@ -101,26 +131,46 @@ int set_output_directory(f_state *s, char *fn) {
     return FALSE;
 }
 
+/**
+ * Test whether the specified mode bit is set
+ * in s->mode (returns nonzero if true).
+ */
 int get_mode(f_state *s, off_t check_mode) {
     return (s->mode & check_mode);
 }
 
+/**
+ * Turn on the specified mode bit in s->mode (bitwise OR).
+ */
 void set_mode(f_state *s, off_t new_mode) {
     s->mode |= new_mode;
 }
 
+/**
+ * Set s->chunk_size to the given size.
+ */
 void set_chunk(f_state *s, int size) {
     s->chunk_size = size;
 }
 
+/**
+ * Set s->skip to the given size.
+ */
 void set_skip(f_state *s, int size) {
     s->skip = size;
 }
 
+/**
+ * Set s->block_size to the given size.
+ */
 void set_block(f_state *s, int size) {
     s->block_size = size;
 }
 
+/**
+ * Write a header section to the audit file
+ * (version, start time, invocation, config, output dirs).
+ */
 void write_audit_header(f_state *s) {
     audit_msg(s, "foremost-ng version %s by %s", VERSION, AUTHOR);
     audit_msg(s, "Audit File");
@@ -131,6 +181,10 @@ void write_audit_header(f_state *s) {
     audit_msg(s, "Configuration file: %s", get_config_file(s));
 }
 
+/**
+ * Open (create) the audit file in the output directory,
+ * set s->audit_file_open, and write the header.
+ */
 int open_audit_file(f_state *s) {
     char fn[MAX_STRING_LENGTH];
 
@@ -150,6 +204,10 @@ int open_audit_file(f_state *s) {
     return FALSE;
 }
 
+/**
+ * Write a footer to the audit file, close it,
+ * and return error status if fclose fails.
+ */
 int close_audit_file(f_state *s) {
     audit_msg(s, FOREMOST_DIVIDER);
     audit_msg(s, "");
@@ -163,6 +221,10 @@ int close_audit_file(f_state *s) {
     return FALSE;
 }
 
+/**
+ * Log a formatted message to both stdout (if verbose)
+ * and the audit file (with a newline), flushing stdout.
+ */
 void audit_msg(f_state *s, char *format, ...) {
     va_list argp;
     va_start(argp, format);
@@ -180,13 +242,16 @@ void audit_msg(f_state *s, char *format, ...) {
     fflush(stdout);
 }
 
+/**
+ * Allocate and copy filename into s->input_file for later processing.
+ */
 void set_input_file(f_state *s, char *filename) {
     s->input_file = (char *)malloc((strlen(filename) + 1) * sizeof(char));
     strncpy(s->input_file, filename, strlen(filename) + 1);
 }
 
 /**
- * Initialize any search specs
+ * Initialize any search specs.
  */
 int init_builtin(f_state *s, int type, char *suffix, char *header, char *footer, int header_len,
                  int footer_len, uint64_t max_len, int case_sen) {
@@ -226,7 +291,7 @@ int init_builtin(f_state *s, int type, char *suffix, char *header, char *footer,
 }
 
 /**
- * Markers are a method to search for any unique information besides just the header and the footer
+ * Markers are a method to search for any unique information besides just the header and the footer.
  */
 void add_marker(f_state *s, int index, char *marker, int markerlength) {
     int i = search_spec[index].num_markers;
@@ -251,7 +316,7 @@ void add_marker(f_state *s, int index, char *marker, int markerlength) {
 }
 
 /**
- * Initial every search spec we know about
+ * Initialize all predefined built‐in search specs.
  */
 void init_all(f_state *state) {
     int index = 0;
@@ -320,7 +385,7 @@ void init_all(f_state *state) {
 }
 
 /**
- * Process any command line args following the -t switch)
+ * Process any command line args following the -t switch).
  */
 int set_search_def(f_state *s, char *ft, uint64_t max_file_size) {
     int index = 0;
@@ -604,6 +669,9 @@ int set_search_def(f_state *s, char *ft, uint64_t max_file_size) {
     return TRUE;
 }
 
+/**
+ * Build the Boyer–Moore skip table for the given needle.
+ */
 void init_bm_table(unsigned char *needle, size_t table[UCHAR_MAX + 1], size_t len, int casesensitive,
                    int searchtype) {
     size_t i = 0, j = 0, currentindex = 0;
@@ -635,6 +703,9 @@ void init_bm_table(unsigned char *needle, size_t table[UCHAR_MAX + 1], size_t le
 }
 
 #ifdef __DEBUG
+/**
+ * Print key fields of the f_state.
+ */
 void dump_state(f_state *s) {
     printf("Current state:\n");
     printf("Config file: %s\n", s->config_file);
