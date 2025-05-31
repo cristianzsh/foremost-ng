@@ -98,13 +98,13 @@ unsigned char *extract_zip(f_state *s, uint64_t c_offset, unsigned char *foundat
                     needle->suffix = "sx";
                 } else if (strstr((char *)foundat, ".class") || strstr((char *)foundat, ".jar") || strstr((char *)foundat, ".java")) {
                     needle->suffix = "jar";
-                } else if(strncmp((char *)foundat, "[Content_Types].xml",19) == 0) {
+                } else if (strncmp((char *)foundat, "[Content_Types].xml", 19) == 0) {
                     office2007 = TRUE;
-                } else if(strncmp((char *)foundat, "ppt/slides",10) == 0 && office2007 == TRUE) {
+                } else if (strncmp((char *)foundat, "ppt/slides", 10) == 0 && office2007 == TRUE) {
                     needle->suffix = "pptx";
-                } else if(strncmp((char *)foundat, "word/document.xml",17) == 0 && office2007 == TRUE) {
+                } else if (strncmp((char *)foundat, "word/document.xml", 17) == 0 && office2007 == TRUE) {
                     needle->suffix = "docx";
-                } else if(strncmp((char *)foundat, "xl/workbook.xml",15) == 0 && office2007 == TRUE) {   
+                } else if (strncmp((char *)foundat, "xl/workbook.xml", 15) == 0 && office2007 == TRUE) {   
                     needle->suffix = "xlsx";
                 } else {
 #ifdef DEBUG
@@ -123,7 +123,7 @@ unsigned char *extract_zip(f_state *s, uint64_t c_offset, unsigned char *foundat
 #endif
             }
 
-            if(localFH.genFlag & 1<<3 && localFH.uncompressed == 0 &&  localFH.compressed == 0 ) {
+            if (localFH.genFlag & 1<<3 && localFH.uncompressed == 0 &&  localFH.compressed == 0 ) {
 #ifdef DEBUG
                 fprintf(stderr,"No data to jmp Just search for the next file Footer (localFH.genFlag:=%d)\n",localFH.genFlag);
 #endif
@@ -691,7 +691,7 @@ unsigned char *extract_ole(f_state *s, uint64_t c_offset, unsigned char *foundat
 
     blknum = htoi((unsigned char *) &h->root_start_block, FOREMOST_LITTLE_ENDIAN);
 
-    if(blknum < 0) {
+    if (blknum < 0) {
         return buf + 10;
     }
 
@@ -700,7 +700,7 @@ unsigned char *extract_ole(f_state *s, uint64_t c_offset, unsigned char *foundat
     printf("getting dir block\n");
 #endif
 
-    // if(!get_dir_block (buf, blknum, buflen)) return buf+validblk;
+    // if (!get_dir_block (buf, blknum, buflen)) return buf+validblk;
     if (!get_block(buf, blknum, buffer, buflen)) {
         return buf + validblk; // GET DIR BLOCK
     }
@@ -1481,7 +1481,7 @@ unsigned char *extract_mp4(f_state *s, uint64_t c_offset, unsigned char *foundat
         // printf("size:=%d\n",size);
 
         if (size > 0 && size < buflen) {
-            if(!isprint(foundat[32]) || !isprint(foundat[33])) {
+            if (!isprint(foundat[32]) || !isprint(foundat[33])) {
                 // printf("print err\n");
                 break;
                 // return foundat+8;
@@ -1805,7 +1805,7 @@ unsigned char *extract_generic(f_state *s, uint64_t c_offset, unsigned char *fou
 #ifdef DEBUG
         printf("found %s!!!\n", needle->footer);
 #endif
-        if(needle->searchtype == SEARCHTYPE_FORWARD_NEXT || needle->searchtype == SEARCHTYPE_ASCII) {
+        if (needle->searchtype == SEARCHTYPE_FORWARD_NEXT || needle->searchtype == SEARCHTYPE_ASCII) {
             file_size = (foundat - buf);
         } else {
             file_size = (foundat - buf) + needle->footer_len;
@@ -1829,7 +1829,7 @@ unsigned char *extract_generic(f_state *s, uint64_t c_offset, unsigned char *fou
     extractbuf = buf;
     write_to_disk(s, needle, file_size, extractbuf, c_offset + f_offset);
 
-    if(needle->searchtype != SEARCHTYPE_ASCII) {
+    if (needle->searchtype != SEARCHTYPE_ASCII) {
         foundat = buf;
         foundat += needle->header_len;
     }
