@@ -1121,45 +1121,36 @@ unsigned char *extract_wmv(f_state *s, uint64_t c_offset, unsigned char *foundat
  *Return: A pointer to where the EOF of the RIFF is in the current buffer
  **********************************************************************************/
 unsigned char *extract_riff(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
-                            s_spec *needle, uint64_t f_offset, char *type)
-{
-    unsigned char   *buf = foundat;
-    unsigned char   *extractbuf = NULL;
-    int             size = 0;
-    uint64_t        file_size = 0;
+                            s_spec *needle, uint64_t f_offset, char *type) {
+    unsigned char *buf = foundat;
+    unsigned char *extractbuf = NULL;
+    int size = 0;
+    uint64_t file_size = 0;
 
-    size = htoi(&foundat[4], FOREMOST_LITTLE_ENDIAN);       /* Grab the total file size in little endian from offset 4*/
-    if (strncmp((char *) &foundat[8], "AVI", 3) == 0)       /*Sanity Check*/
-        {
-        if (strncmp((char *) &foundat[12], "LIST", 4) == 0) /*Sanity Check*/
-            {
-            if (size > 0 && size <= needle->max_len && size <= buflen)
-            {
+    size = htoi(&foundat[4], FOREMOST_LITTLE_ENDIAN); // Grab the total file size in little endian from offset 4
+    if (strncmp((char *) &foundat[8], "AVI", 3) == 0) {
+        if (strncmp((char *) &foundat[12], "LIST", 4) == 0) {
+            if (size > 0 && size <= needle->max_len && size <= buflen) {
 #ifdef DEBUG
                 printf("\n  Found an AVI at:=%lld,File size:=%d\n", c_offset, size);
 #endif
                 file_size = size;
                 extractbuf = buf;
                 needle->suffix = "avi";
-                if (!strstr(needle->suffix, type) && strcmp(type,"all")!=0)
+                if (!strstr(needle->suffix, type) && strcmp(type,"all") != 0) {
                     return foundat + size;
+                }
                 write_to_disk(s, needle, file_size, extractbuf, c_offset + f_offset);
                 foundat += size;
                 return foundat;
             }
 
             return buf + needle->header_len;
-
-            }
-        else
-            {
+        } else {
             return buf + needle->header_len;
-            }
         }
-    else if (strncmp((char *) &foundat[8], "WAVE", 4) == 0) /*Sanity Check*/
-        {
-        if (size > 0 && size <= needle->max_len && size <= buflen)
-        {
+    } else if (strncmp((char *) &foundat[8], "WAVE", 4) == 0) {
+        if (size > 0 && size <= needle->max_len && size <= buflen) {
 #ifdef DEBUG
             printf("\n  Found a WAVE at:=%lld,File size:=%d\n", c_offset, size);
 #endif
@@ -1176,15 +1167,11 @@ unsigned char *extract_riff(f_state *s, uint64_t c_offset, unsigned char *founda
         }
 
         return buf + needle->header_len;
-
-        }
-    else
-        {
+    } else {
         return buf + needle->header_len;
-        }
+    }
 
     return NULL;
-
 }
 
 /********************************************************************************
@@ -1193,63 +1180,57 @@ unsigned char *extract_riff(f_state *s, uint64_t c_offset, unsigned char *founda
  *Return: A pointer to where the EOF of the BMP is in the current buffer
  **********************************************************************************/
 unsigned char *extract_bmp(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
-                           s_spec *needle, uint64_t f_offset)
-{
-    unsigned char   *buf = foundat;
-    int             size = 0;
-    int             headerlength = 0;
-    int             v_size = 0;
-    int             h_size = 0;
-    unsigned char   *extractbuf = NULL;
-    uint64_t        file_size = 0;
-    char            comment[32];
-    int             dataOffset = 0;
-    int             dataSize = 0;
+                           s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
+    int size = 0;
+    int headerlength = 0;
+    int v_size = 0;
+    int h_size = 0;
+    unsigned char *extractbuf = NULL;
+    uint64_t file_size = 0;
+    char comment[32];
 
-    if (buflen < 100)
+    if (buflen < 100) {
         return buf + needle->header_len;
+    }
 
-    /*JUMP the first to bytes of the header (BM)*/
-    size = htoi(&foundat[2], FOREMOST_LITTLE_ENDIAN);   /*Grab the total file size in little_endian*/
+    // JUMP the first to bytes of the header (BM)
+    size = htoi(&foundat[2], FOREMOST_LITTLE_ENDIAN); // Grab the total file size in little_endian
 
-    /*Sanity Check*/
-    if (size <= 100 || size > needle->max_len)
+    if (size <= 100 || size > needle->max_len) {
         return buf + needle->header_len;
+    }
 
-    dataOffset = htoi(&foundat[10], FOREMOST_LITTLE_ENDIAN);
-    dataSize = htoi(&foundat[34], FOREMOST_LITTLE_ENDIAN);
+#ifdef DEBUG
+    int dataOffset = htoi(&foundat[10], FOREMOST_LITTLE_ENDIAN);
+    int dataSize = htoi(&foundat[34], FOREMOST_LITTLE_ENDIAN);
+#endif
 
     headerlength = htoi(&foundat[14], FOREMOST_LITTLE_ENDIAN);
 
-    if (dataSize + dataOffset != size)
-        {
-
-        //printf("newtest != dataSize:=%d dataOffset:=%d\n",dataSize,dataOffset);
-        }
-
-    //Header length
-    if (headerlength > 1000 || headerlength <= 0)
+    // Header length
+    if (headerlength > 1000 || headerlength <= 0) {
         return buf + needle->header_len;
+    }
 
-    //foundat+=4;
+    // foundat += 4;
     v_size = htoi(&foundat[22], FOREMOST_LITTLE_ENDIAN);
     h_size = htoi(&foundat[18], FOREMOST_LITTLE_ENDIAN);
 
-    //Vertical length
-    if (v_size <= 0 || v_size > 2000 || h_size <= 0)
+    // Vertical length
+    if (v_size <= 0 || v_size > 2000 || h_size <= 0) {
         return buf + needle->header_len;
+    }
 
 #ifdef DEBUG
     printf("\n  The size of the BMP is %d, Header length:=%d , Vertical Size:= %d, dataSize:=%d dataOffset:=%d\n",
-       size,
+           size,
            headerlength,
            v_size,
            dataSize,
            dataOffset);
 #endif
-    if (size <= buflen)
-        {
-
+    if (size <= buflen) {
         sprintf(comment, " (%d x %d)", h_size, v_size);
         strcat(needle->comment, comment);
 
@@ -1259,9 +1240,7 @@ unsigned char *extract_bmp(f_state *s, uint64_t c_offset, unsigned char *foundat
         write_to_disk(s, needle, file_size, extractbuf, (c_offset + f_offset));
         foundat += file_size;
         return foundat;
-
-        }
-
+    }
     return NULL;
 }
 
@@ -1272,33 +1251,33 @@ unsigned char *extract_bmp(f_state *s, uint64_t c_offset, unsigned char *foundat
  *Return: A pointer to where the EOF of the GIF is in the current buffer
  **********************************************************************************/
 unsigned char *extract_gif(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
-                           s_spec *needle, uint64_t f_offset)
-{
-    unsigned char   *buf = foundat;
+                           s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
     //unsigned char *currentpos = foundat;
-    unsigned char   *extractbuf = NULL;
-    int             bytes_to_search = 0;
-    unsigned short  width = 0;
-    unsigned short  height = 0;
-    uint64_t        file_size = 0;
-    char            comment[32];
-    foundat += 4;       /*Jump the first 4 bytes of the gif header (GIF8)*/
+    unsigned char *extractbuf = NULL;
+    int bytes_to_search = 0;
+    unsigned short width = 0;
+    unsigned short height = 0;
+    uint64_t file_size = 0;
+    char comment[32];
+    foundat += 4; // Jump the first 4 bytes of the gif header (GIF8)
 
-    /*Check if the GIF is type 89a or 87a*/
-    if (strncmp((char *)foundat, "9a", 2) == 0 || strncmp((char *)foundat, "7a", 2) == 0)
-        {
-        foundat += 2;   /*Jump the length of the header*/
+    // Check if the GIF is type 89a or 87a
+    if (strncmp((char *)foundat, "9a", 2) == 0 || strncmp((char *)foundat, "7a", 2) == 0) {
+        foundat += 2; // Jump the length of the header
         width = htos(foundat, FOREMOST_LITTLE_ENDIAN);
         height = htos(&foundat[2], FOREMOST_LITTLE_ENDIAN);
 
         sprintf(comment, " (%d x %d)", width, height);
         strcat(needle->comment, comment);
 
-        //currentpos = foundat;
-        if (buflen - (foundat - buf) >= needle->max_len)
+        // currentpos = foundat;
+        if (buflen - (foundat - buf) >= needle->max_len) {
             bytes_to_search = needle->max_len;
-        else
+        } else {
             bytes_to_search = buflen - (foundat - buf);
+        }
+
         foundat = bm_search(needle->footer,
                             needle->footer_len,
                             foundat,
@@ -1306,10 +1285,8 @@ unsigned char *extract_gif(f_state *s, uint64_t c_offset, unsigned char *foundat
                             needle->footer_bm_table,
                             needle->case_sen,
                             SEARCHTYPE_FORWARD);
-        if (foundat)
-        {
-
-            /*We found the EOF, write the file to disk and return*/
+        if (foundat) {
+            // We found the EOF, write the file to disk and return
 #ifdef DEBUG
             printx(foundat, 0, 16);
 #endif
@@ -1324,13 +1301,9 @@ unsigned char *extract_gif(f_state *s, uint64_t c_offset, unsigned char *foundat
         }
 
         return NULL;
-
-        }
-    else                /*Invalid GIF header return the current pointer*/
-        {
+    } else {
         return foundat;
-        }
-
+    }
 }
 
 /********************************************************************************
@@ -1338,15 +1311,14 @@ unsigned char *extract_gif(f_state *s, uint64_t c_offset, unsigned char *foundat
  * Not done yet
  **********************************************************************************/
 unsigned char *extract_mpg(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
-                           s_spec *needle, uint64_t f_offset)
-{
-    unsigned char   *buf = foundat;
-    unsigned char   *currentpos = NULL;
+                           s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
+    unsigned char *currentpos = NULL;
 
-    unsigned char   *extractbuf = NULL;
-    int             bytes_to_search = 0;
-    unsigned short  size = 0;
-    uint64_t        file_size = 0;
+    unsigned char *extractbuf = NULL;
+    int bytes_to_search = 0;
+    unsigned short size = 0;
+    uint64_t file_size = 0;
 
     /*
     size=htos(&foundat[4],FOREMOST_BIG_ENDIAN);
@@ -1356,28 +1328,21 @@ unsigned char *extract_mpg(f_state *s, uint64_t c_offset, unsigned char *foundat
     foundat+=4;
     */
 #ifdef DEBUG
-    int             j = 0;
+    int j = 0;
 #endif
-    if (foundat[15] == (unsigned char)'\xBB')
-        {
-        }
-    else
-        {
+    if (foundat[15] == (unsigned char)'\xBB') {
 
+    } else {
         return buf + needle->header_len;
-        }
+    }
 
-    if (buflen <= 2 * KILOBYTE)
-        {
+    if (buflen <= 2 * KILOBYTE) {
         bytes_to_search = buflen;
-        }
-    else
-        {
+    } else {
         bytes_to_search = 2 * KILOBYTE;
-        }
+    }
 
-    while (1)
-        {
+    while (1) {
         currentpos = foundat;
 #ifdef DEBUG
         j = 0;
@@ -1391,16 +1356,12 @@ unsigned char *extract_mpg(f_state *s, uint64_t c_offset, unsigned char *foundat
                             needle->case_sen,
                             SEARCHTYPE_FORWARD);
 
-        if (foundat)
-        {
+        if (foundat) {
 #ifdef DEBUG
             printf("Found after searching %ld\n", foundat - currentpos);
 #endif
-            while (1)
-                {
-
-                if (foundat[3] >= (unsigned char)'\xBB' && foundat[3] <= (unsigned char)'\xEF')
-                {
+            while (1) {
+                if (foundat[3] >= (unsigned char)'\xBB' && foundat[3] <= (unsigned char)'\xEF') {
 #ifdef DEBUG
                     printf("jumping %d:\n", j);
 #endif
@@ -1411,28 +1372,20 @@ unsigned char *extract_mpg(f_state *s, uint64_t c_offset, unsigned char *foundat
                     printf("size:=%d\n\tjump: ", size);
 #endif
                     file_size += (foundat - buf) + size;
-                    if (size <= 0 || size > buflen - (foundat - buf))
-                    {
+                    if (size <= 0 || size > buflen - (foundat - buf)) {
 #ifdef DEBUG
                         printf("Not enough room in the buffer ");
 #endif
-                        if (size <= 50 * KILOBYTE && size > 0)
-                            {
-
-                            /*We should probably search more*/
-                            if (file_size < needle->max_len)
-                                {
+                        if (size <= 50 * KILOBYTE && size > 0) {
+                            // We should probably search more
+                            if (file_size < needle->max_len) {
                                 return NULL;
-                                }
-                            else
-                                {
+                            } else {
                                 break;
-                                }
                             }
-                        else
-                            {
+                        } else {
                             return currentpos + needle->header_len;
-                            }
+                        }
                     }
 
                     foundat += size + 6;
@@ -1440,22 +1393,15 @@ unsigned char *extract_mpg(f_state *s, uint64_t c_offset, unsigned char *foundat
                     printx(foundat, 0, 16);
                     j++;
 #endif
-                }
-                else
-                    {
-
+                } else {
                     break;
-                    }
                 }
+            }
 
-            if (foundat[3] == (unsigned char)'\xB9')
-                {
+            if (foundat[3] == (unsigned char)'\xB9') {
                 break;
-                }
-            else if (foundat[3] != (unsigned char)'\xBA' && foundat[3] != (unsigned char)'\x00')
-                {
-
-                /*This is the error state where this doesn't seem to be an mpg anymore*/
+            } else if (foundat[3] != (unsigned char)'\xBA' && foundat[3] != (unsigned char)'\x00') {
+                // This is the error state where this doesn't seem to be an mpg anymore
                 size = htos(&foundat[4], FOREMOST_BIG_ENDIAN);
 #ifdef DEBUG
                 printf("\t ***TEST: %x\n", foundat[3]);
@@ -1463,54 +1409,43 @@ unsigned char *extract_mpg(f_state *s, uint64_t c_offset, unsigned char *foundat
 
                 printf("size:=%d\n", size);
 #endif
-                if ((currentpos - buf) >= 1 * MEGABYTE)
-                    {
+                if ((currentpos - buf) >= 1 * MEGABYTE) {
                     foundat = currentpos;
                     break;
-                    }
+                }
 
                 return currentpos + needle->header_len;
-
-                }
-            else if (foundat[3] == (unsigned char)'\xB3')
-                {
+            } else if (foundat[3] == (unsigned char)'\xB3') {
                 foundat += 3;
-                }
-            else
-                {
+            } else {
                 foundat += 3;
-                }
-        }
-        else
-            {
-            if ((currentpos - buf) >= 1 * MEGABYTE)
-                {
+            }
+        } else {
+            if ((currentpos - buf) >= 1 * MEGABYTE) {
                 foundat = currentpos;
                 break;
-                }
-            else
-            {
+            } else {
 #ifdef DEBUG
                 printf("RETURNING BUF\n");
 #endif
                 return buf + needle->header_len;
             }
-            }
         }
+    }
 
-    if (foundat)
-        {
+    if (foundat) {
         file_size = (foundat - buf) + needle->footer_len;
-        if (file_size < 1 * KILOBYTE)
+        if (file_size < 1 * KILOBYTE) {
             return buf + needle->header_len;
         }
-    else
-        {
+    } else {
         return buf + needle->header_len;
-        }
+    }
 
-    if (file_size > buflen)
+    if (file_size > buflen) {
         file_size = buflen;
+    }
+
     foundat = buf;
 #ifdef DEBUG
     printf("The file size is  %llu  c_offset:=%llu\n", file_size, c_offset);
@@ -1522,79 +1457,66 @@ unsigned char *extract_mpg(f_state *s, uint64_t c_offset, unsigned char *foundat
     return foundat;
 }
 
-
 /********************************************************************************
  *Function: extract_mp4
  * Not done yet
  **********************************************************************************/
 unsigned char *extract_mp4(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
-                           s_spec *needle, uint64_t f_offset)
-{
-    unsigned char   *buf = foundat;
+                           s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
 
-    unsigned char   *extractbuf = NULL;
-    unsigned int    size = 0;
-    uint64_t        file_size = 0;
+    unsigned char *extractbuf = NULL;
+    unsigned int size = 0;
+    uint64_t file_size = 0;
 
-   
-    while(1)
-    {
-        size=htoi(&foundat[28],FOREMOST_BIG_ENDIAN);
-        if(size ==0)
-        {
-            //printf("size ==0\n");
-            foundat+=28;
+    while(1) {
+        size = htoi(&foundat[28], FOREMOST_BIG_ENDIAN);
+
+        if (size == 0) {
+            // printf("size ==0\n");
+            foundat += 28;
             break;
         }
-            //printf("size:=%d\n",size);
-        if(size > 0 && size < buflen)
-        {
-            if(!isprint(foundat[32]) ||  !isprint(foundat[33]))
-            {
-                //printf("print err\n");
+
+        // printf("size:=%d\n",size);
+
+        if (size > 0 && size < buflen) {
+            if(!isprint(foundat[32]) || !isprint(foundat[33])) {
+                // printf("print err\n");
                 break;
-                //return foundat+8;
+                // return foundat+8;
             }
-            foundat+=size;
-            
-        }
-        else
-        {
-            if (size < needle->max_len)
-            {
-                //printf("Searching More\n");
+            foundat += size;
+        } else {
+            if (size < needle->max_len) {
+                // printf("Searching More\n");
                 return NULL;
-            }
-            else
-            {
-                //printf("ERR\n");
-                //return foundat+8;
+            } else {
+                // printf("ERR\n");
+                // return foundat+8;
                 break;
             }
-        }   
-    
-        //printx(foundat,0,32);
-
+        }
+        // printx(foundat,0,32);
     }
-    if (foundat)
-    {
+
+    if (foundat) {
         file_size = (foundat - buf) + needle->footer_len;
-        if (file_size < 1 * KILOBYTE)
+        if (file_size < 1 * KILOBYTE) {
             return buf + needle->header_len;
+        }
     }
-    
 
-    if (file_size > buflen)
+    if (file_size > buflen) {
         file_size = buflen;
+    }
     foundat = buf;
-
 
     extractbuf = buf;   
     write_to_disk(s, needle, file_size, extractbuf, c_offset + f_offset);
     foundat += file_size;
     return foundat;
 }
-
 
 /********************************************************************************
  *Function: extract_png
@@ -1603,35 +1525,38 @@ unsigned char *extract_mp4(f_state *s, uint64_t c_offset, unsigned char *foundat
  *Return: A pointer to where the EOF of the PNG is in the current buffer
  **********************************************************************************/
 unsigned char *extract_png(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
-                           s_spec *needle, uint64_t f_offset)
-{
-    unsigned char   *buf = foundat;
-    unsigned char   *currentpos = NULL;
+                           s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
+    unsigned char *currentpos = NULL;
 
-    unsigned char   *extractbuf = NULL;
-    int             size = 0;
-    int             height = 0;
-    int             width = 0;
-    uint64_t        file_size = 0;
-    char            comment[32];
+    unsigned char *extractbuf = NULL;
+    int size = 0;
+    int height = 0;
+    int width = 0;
+    uint64_t file_size = 0;
+    char comment[32];
 
-    if (buflen < 100)
+    if (buflen < 100) {
         return NULL;
+    }
+
     foundat += 8;
     width = htoi(&foundat[8], FOREMOST_BIG_ENDIAN);
     height = htoi(&foundat[12], FOREMOST_BIG_ENDIAN);
 
-    if (width < 1 || height < 1)
+    if (width < 1 || height < 1) {
         return foundat;
+    }
 
-    if (width > 3000 || height > 3000)
+    if (width > 3000 || height > 3000) {
         return foundat;
+    }
 
     sprintf(comment, " (%d x %d)", width, height);
     strcat(needle->comment, comment);
 
-    while (1)   /* Jump through the headers until we reach the "data" part of the file*/
-        {
+    // Jump through the headers until we reach the "data" part of the file
+    while (1) {
         size = htoi(foundat, FOREMOST_BIG_ENDIAN);
 #ifdef DEBUG
         printx(foundat, 0, 16);
@@ -1639,41 +1564,35 @@ unsigned char *extract_png(f_state *s, uint64_t c_offset, unsigned char *foundat
 #endif
 
         currentpos = foundat;
-        if (size <= 0 || size > buflen - (foundat - buf))
-        {
+        if (size <= 0 || size > buflen - (foundat - buf)) {
 #ifdef DEBUG
             printf("buflen - (foundat-buf)=%llu\n", (unsigned long long)(buflen - (foundat - buf)));
 #endif
             return currentpos;
         }
 
-        /*12 is the length of the size, TYPE, and CRC field*/
+        // 12 is the length of the size, TYPE, and CRC field
         foundat += size + 12;
 
-        if (isprint(foundat[4]))
-            {
-            if (strncmp((char *) &foundat[4], "IEND", 4) == 0)
-                {
+        if (isprint(foundat[4])) {
+            if (strncmp((char *) &foundat[4], "IEND", 4) == 0) {
                 break;
-                }
             }
-        else
-        {
+        } else {
 #ifdef DEBUG
             printx(foundat, 0, 16);
             printf("Not ascii returning\n");
 #endif
             return currentpos;
         }
+    }
 
-        }
-
-    if (foundat)
-        {
+    if (foundat) {
         file_size = (foundat - buf) + htoi(foundat, FOREMOST_BIG_ENDIAN) + 12;
 
-        if (file_size > buflen)
+        if (file_size > buflen) {
             file_size = buflen;
+        }
         foundat = buf;
 #ifdef DEBUG
         printf("The file size is  %llu  c_offset:=%llu\n", file_size, c_offset);
@@ -1682,7 +1601,7 @@ unsigned char *extract_png(f_state *s, uint64_t c_offset, unsigned char *foundat
         write_to_disk(s, needle, file_size, extractbuf, c_offset + f_offset);
         foundat += file_size;
         return foundat;
-        }
+    }
 
     return NULL;
 }
@@ -1694,43 +1613,37 @@ unsigned char *extract_png(f_state *s, uint64_t c_offset, unsigned char *foundat
  *Return: A pointer to where the EOF of the JPEG is in the current buffer
  **********************************************************************************/
 unsigned char *extract_jpeg(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
-                            s_spec *needle, uint64_t f_offset)
-{
-    unsigned char   *buf = foundat;
+                            s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
     //unsigned char *currentpos = NULL;
 
-    unsigned char   *extractbuf = NULL;
-    unsigned short  headersize;
-    int             bytes_to_search = 0;
-    int             hasTable = FALSE;
-    int             hasHuffman = FALSE;
-    uint64_t        file_size = 0;
+    unsigned char *extractbuf = NULL;
+    unsigned short headersize;
+    int bytes_to_search = 0;
+    int hasTable = FALSE;
+    int hasHuffman = FALSE;
+    uint64_t file_size = 0;
 
     // char comment[32];
 
-    /*Check if we have a valid header*/
-    if (buflen < 128)
-        {
+    // Check if we have a valid header
+    if (buflen < 128) {
         return NULL;
-        }
+    }
 
-    if (foundat[3] == (unsigned char)'\xe0')
-        {
+    if (foundat[3] == (unsigned char)'\xe0') {
+        // JFIF header
+        // sprintf(comment," (JFIF)");
+        // strcat(needle->comment,comment);
+    } else if (foundat[3] == (unsigned char)'\xe1') {
+        // sprintf(comment," (EXIF)");
+        // strcat(needle->comment,comment);
+    } else {
+        return foundat + needle->header_len; // Invalid keep searching
+    }
 
-        //JFIF header
-        //sprintf(comment," (JFIF)");
-        //strcat(needle->comment,comment);
-        }
-    else if (foundat[3] == (unsigned char)'\xe1')
-        {
-
-        //sprintf(comment," (EXIF)");
-        //strcat(needle->comment,comment);
-        }
-    else
-        return foundat + needle->header_len;    //Invalid keep searching
-    while (1)                                   /* Jump through the headers until we reach the "data" part of the file*/
-    {
+    // Jump through the headers until we reach the "data" part of the file
+    while (1) {
 #ifdef DEBUG
         printx(foundat, 0, 16);
 #endif
@@ -1740,54 +1653,49 @@ unsigned char *extract_jpeg(f_state *s, uint64_t c_offset, unsigned char *founda
         printf("Headersize:=%d buflen:=%lld\n", headersize, buflen);
 #endif
 
-        
-        if (((foundat + headersize) - buf) > buflen){ return NULL; }    
+        if (((foundat + headersize) - buf) > buflen) {
+            return NULL;
+        }    
 
         foundat += headersize;
-        
-        if (foundat[2] != (unsigned char)'\xff')
-            {
+
+        if (foundat[2] != (unsigned char)'\xff') {
             break;
-            }
+        }
 
-        /*Ignore 2 "0xff" side by side*/
-        if (foundat[2] == (unsigned char)'\xff' && foundat[3] == (unsigned char)'\xff')
-            {
+        // Ignore 2 "0xff" side by side
+        if (foundat[2] == (unsigned char)'\xff' && foundat[3] == (unsigned char)'\xff') {
             foundat++;
-            }
+        }
 
-        if (foundat[3] == (unsigned char)'\xdb' || foundat[4] == (unsigned char)'\xdb')
-            {
+        if (foundat[3] == (unsigned char)'\xdb' || foundat[4] == (unsigned char)'\xdb') {
             hasTable = TRUE;
-            }
-        else if (foundat[3] == (unsigned char)'\xc4')
-            {
+        } else if (foundat[3] == (unsigned char)'\xc4') {
             hasHuffman = TRUE;
-            }
+        }
     }
 
-    /*All jpegs must contain a Huffman marker as well as a quantization table*/
-    if (!hasTable || !hasHuffman)
-    {
+    // All jpegs must contain a Huffman marker as well as a quantization table
+    if (!hasTable || !hasHuffman) {
 #ifdef DEBUG
         printf("No Table or Huffman \n");
 #endif
         return buf + needle->header_len;
     }
 
-    //currentpos = foundat;
-
-    //sprintf("Searching for footer\n");
+    // currentpos = foundat;
+    // sprintf("Searching for footer\n");
     if (buflen < (foundat - buf)) {
 #ifdef DEBUG
         printf("avoided bug in extract_jpeg!\n");
 #endif
         bytes_to_search = 0;
     } else {
-        if (buflen - (foundat - buf) >= needle->max_len)
+        if (buflen - (foundat - buf) >= needle->max_len) {
             bytes_to_search = needle->max_len;
-        else
+        } else {
             bytes_to_search = buflen - (foundat - buf);
+        }
     }
 
     foundat = bm_search(needle->footer,
@@ -1798,30 +1706,25 @@ unsigned char *extract_jpeg(f_state *s, uint64_t c_offset, unsigned char *founda
                         needle->case_sen,
                         SEARCHTYPE_FORWARD);
 
-    if (foundat)                                /*Found found a valid JPEG*/
-        {
-
-        /*We found the EOF, write the file to disk and return*/
+    // Found a valid JPEG
+    if (foundat) {
+        // We found the EOF, write the file to disk and return
         file_size = (foundat - buf) + needle->footer_len;
 #ifdef DEBUG
         printf("The jpeg file size is  %llu  c_offset:=%llu\n", file_size, c_offset);
 #endif
-
-        //extractbuf=(unsigned char*) malloc(file_size*sizeof(char));
-        //memcpy(extractbuf,buf,file_size);
+        // extractbuf=(unsigned char*) malloc(file_size*sizeof(char));
+        // memcpy(extractbuf, buf, file_size);
         extractbuf = buf;
         write_to_disk(s, needle, file_size, extractbuf, c_offset + f_offset);
         foundat += needle->footer_len;
 
-        ////free(extractbuf);
+        // free(extractbuf);
         return foundat;
-        }
-    else
-        {
+    } else {
         return NULL;
-        }
-
-}   //End extract_jpeg
+    }
+}
 
 /********************************************************************************
  *Function: extract_generic
@@ -1829,76 +1732,63 @@ unsigned char *extract_jpeg(f_state *s, uint64_t c_offset, unsigned char *founda
  *Return: A pointer to where the EOF of the
  **********************************************************************************/
 unsigned char *extract_generic(f_state *s, uint64_t c_offset, unsigned char *foundat,
-                               uint64_t buflen, s_spec *needle, uint64_t f_offset)
-{
-    unsigned char   *buf = foundat;
-    unsigned char   *endptr = foundat;
-    unsigned char   *beginptr = foundat;
-    unsigned char   *extractbuf = NULL;
-    int     bytes_to_search = 0;
-    uint64_t    file_size = 0;
-    int begin=0;
-    int end=0;
-    
+                               uint64_t buflen, s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
+    unsigned char *endptr = foundat;
+    unsigned char *beginptr = foundat;
+    unsigned char *extractbuf = NULL;
+    int bytes_to_search = 0;
+    uint64_t file_size = 0;
+    int begin = 0;
+    int end = 0;
 
-    if (buflen - (foundat - buf) >= needle->max_len)
+    if (buflen - (foundat - buf) >= needle->max_len) {
         bytes_to_search = needle->max_len;
-    else
+    } else {
         bytes_to_search = buflen - (foundat - buf);
+    }
 
-    if(needle->searchtype ==SEARCHTYPE_FORWARD_NEXT)
-    {
-            foundat+=needle->header_len;
-            foundat = bm_search(needle->header,
+    if (needle->searchtype == SEARCHTYPE_FORWARD_NEXT) {
+        foundat+=needle->header_len;
+        foundat = bm_search(needle->header,
                             needle->header_len,
                             foundat,
                             bytes_to_search,
                             needle->footer_bm_table,
                             needle->case_sen,
                             SEARCHTYPE_FORWARD);
-    }
-    else if(needle->searchtype ==SEARCHTYPE_ASCII)
-    {
-            
-    
-            while (isprint(foundat[end]) || foundat[end] == '\x0a' || foundat[end] == '\x0d' || foundat[end] == '\x09')
-            {
-                end++;
-            }
-            
-            foundat+=end;
-            endptr=foundat;
-            foundat=buf;
-            
-            while (isprint(foundat[begin-1]) || foundat[begin-1] == '\x0a' || foundat[begin-1] == '\x0d' || foundat[begin-1] == '\x09')
-            {
-                begin--;
-            }
-            
-            foundat+=begin;
-            beginptr=foundat;
-            
-            buf=beginptr;
-            foundat=endptr;
-            //printx(buf,0,4);  
-            
-            file_size=end-begin;    
-            //fprintf(stderr,"file_size=%llu end=%d begin=%d ptrsize=%d ptrsize2=%d\n",file_size,end,begin,endptr-beginptr,foundat-buf);
-            if(buf==foundat) 
-            {
-                    fprintf(stderr,"Returning Foundat\n");
-                    return foundat+needle->header_len;
-            }           
-    }
-    else if (needle->footer == NULL || strlen((char *)needle->footer) < 1)
-    {
+    } else if (needle->searchtype == SEARCHTYPE_ASCII) {
+        while (isprint(foundat[end]) || foundat[end] == '\x0a' || foundat[end] == '\x0d' || foundat[end] == '\x09') {
+            end++;
+        }
+
+        foundat += end;
+        endptr = foundat;
+        foundat = buf;
+
+        while (isprint(foundat[begin-1]) || foundat[begin-1] == '\x0a' || foundat[begin-1] == '\x0d' || foundat[begin-1] == '\x09') {
+            begin--;
+        }
+
+        foundat += begin;
+        beginptr = foundat;
+
+        buf = beginptr;
+        foundat = endptr;
+        // printx(buf,0,4);
+
+        file_size = end - begin;
+        // fprintf(stderr,"file_size=%llu end=%d begin=%d ptrsize=%d ptrsize2=%d\n",file_size,end,begin,endptr-beginptr,foundat-buf);
+        if (buf==foundat) {
+            fprintf(stderr,"Returning Foundat\n");
+            return foundat+needle->header_len;
+        }
+    } else if (needle->footer == NULL || strlen((char *)needle->footer) < 1) {
 #ifdef DEBUG
         printf("footer is NULL\n");
 #endif
         foundat = NULL;
-    }
-    else
-    {
+    } else {
 #ifdef DEBUG
         printf("footer is not NULL %p\n", needle->footer);
 #endif
@@ -1911,51 +1801,39 @@ unsigned char *extract_generic(f_state *s, uint64_t c_offset, unsigned char *fou
                             SEARCHTYPE_FORWARD);
     }
 
-    if (foundat)
-    {
+    if (foundat) {
 #ifdef DEBUG
         printf("found %s!!!\n", needle->footer);
 #endif
-        if(needle->searchtype ==SEARCHTYPE_FORWARD_NEXT || needle->searchtype ==SEARCHTYPE_ASCII)
-        {
-                file_size = (foundat - buf);
+        if(needle->searchtype == SEARCHTYPE_FORWARD_NEXT || needle->searchtype == SEARCHTYPE_ASCII) {
+            file_size = (foundat - buf);
+        } else {
+            file_size = (foundat - buf) + needle->footer_len;
         }
-        else
-        {
-                file_size = (foundat - buf) + needle->footer_len;
-        }   
-    }
-    else
-    {
+    } else {
         file_size = needle->max_len;
     }
 
-    if (file_size == 0)
-    {
+    if (file_size == 0) {
         file_size = needle->max_len;
     }
 
-    if (file_size > (buflen-begin))
-    {
+    if (file_size > (buflen-begin)) {
         file_size = buflen;
     }
-    
+
 #ifdef DEBUG
     printf("The file size is  %llu  c_offset:=%llu\n", file_size, c_offset);
 #endif
 
     extractbuf = buf;
     write_to_disk(s, needle, file_size, extractbuf, c_offset + f_offset);
-    
-    if(needle->searchtype !=SEARCHTYPE_ASCII)
-    {
-        foundat=buf;
+
+    if(needle->searchtype != SEARCHTYPE_ASCII) {
+        foundat = buf;
         foundat += needle->header_len;
     }
-    return foundat;     
-    
-    
-    
+    return foundat;
 }
 
 /********************************************************************************
@@ -1964,50 +1842,48 @@ unsigned char *extract_generic(f_state *s, uint64_t c_offset, unsigned char *fou
  *Return: A pointer to where the EOF of the
  **********************************************************************************/
 unsigned char *extract_exe(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
-                           s_spec *needle, uint64_t f_offset)
-{
-    unsigned char   *buf = foundat;
-    unsigned char   *extractbuf = NULL;
-    uint64_t        file_size = 0;
-    unsigned short  pe_offset = 0;
-    //unsigned int  SizeOfCode = 0;
-    //unsigned int  SizeOfInitializedData = 0;
-    //unsigned int  SizeOfUninitializedData = 0;
-    //unsigned int  rva = 0;
-    unsigned int    offset = 0;
-    unsigned short  sections = 0;
-    //unsigned int  sizeofimage = 0;
-    unsigned int    raw_section_size = 0;
-    //unsigned int  size_of_headers = 0;
-    unsigned short  dll = 0;
-    unsigned int    sum = 0;
-    unsigned short  exe_char = 0;
-    //unsigned int  align = 0;
-    int             i = 0;
-    time_t          compile_time = 0;
-    struct tm       *ret_time;
-    char            comment[80];
-    char            ascii_time[80];
+                           s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
+    unsigned char *extractbuf = NULL;
+    uint64_t file_size = 0;
+    unsigned short pe_offset = 0;
+    unsigned int offset = 0;
+    unsigned short sections = 0;
+    unsigned int raw_section_size = 0;
+    unsigned short dll = 0;
+    unsigned int sum = 0;
+    unsigned short exe_char = 0;
+    int i = 0;
+    time_t compile_time = 0;
+    struct tm *ret_time;
+    char comment[80];
+    char ascii_time[80];
+    //unsigned int SizeOfCode = 0;
+    //unsigned int SizeOfInitializedData = 0;
+    //unsigned int SizeOfUninitializedData = 0;
+    //unsigned int rva = 0;
+    //unsigned int size_of_headers = 0;
+    //unsigned int align = 0;
+    //unsigned int sizeofimage = 0;
 
-    if (buflen < 100)
+    if (buflen < 100) {
         return foundat + 2;
+    }
+
     pe_offset = htos(&foundat[60], FOREMOST_LITTLE_ENDIAN);
-    if (pe_offset < 1 || pe_offset > 1000 || pe_offset > buflen)
-        {
+    if (pe_offset < 1 || pe_offset > 1000 || pe_offset > buflen) {
         return foundat + 60;
-        }
+    }
 
     foundat += pe_offset;
-    if (foundat[0] != (unsigned char)'\x50' || foundat[1] != (unsigned char)'\x45')
-        {
+    if (foundat[0] != (unsigned char)'\x50' || foundat[1] != (unsigned char)'\x45') {
         return foundat;
-        }
+    }
 
     sections = htos(&foundat[6], FOREMOST_LITTLE_ENDIAN);
-    if (buflen < (40 * sections + 224))
-        {
+    if (buflen < (40 * sections + 224)) {
         return foundat;
-        }
+    }
 
     compile_time = (time_t) htoi(&foundat[8], FOREMOST_LITTLE_ENDIAN);
     ret_time = gmtime(&compile_time);
@@ -2024,52 +1900,42 @@ unsigned char *extract_exe(f_state *s, uint64_t c_offset, unsigned char *foundat
     sprintf(comment, "%s", ascii_time);
     strcat(needle->comment, comment);
     exe_char = htos(&foundat[22], FOREMOST_LITTLE_ENDIAN);
-    if (exe_char & 0x2000)
-        {
+
+    if (exe_char & 0x2000) {
         dll = 1;
-        }
-    else if (exe_char & 0x1000)
-        {
-
-        //printf("System File!!!\n");
-        }
-    else if (exe_char & 0x0002)
-        {
-
-        //printf("EXE !!!\n");
-        }
-    else
-        {
+    } else if (exe_char & 0x1000) {
+        // printf("System File!!!\n");
+    } else if (exe_char & 0x0002) {
+        // printf("EXE !!!\n");
+    } else {
         return foundat;
-        }
+    }
 
-    foundat += 0x18;    /*Jump to opt header should be 0x0b 0x01*/
+    foundat += 0x18; // Jump to opt header should be 0x0b 0x01
 
-    //SizeOfCode = htoi(&foundat[4], FOREMOST_LITTLE_ENDIAN);
-    //SizeOfInitializedData = htoi(&foundat[8], FOREMOST_LITTLE_ENDIAN);
-    //SizeOfUninitializedData = htoi(&foundat[12], FOREMOST_LITTLE_ENDIAN);
-    //rva = htoi(&foundat[16], FOREMOST_LITTLE_ENDIAN);
-    //align = htoi(&foundat[36], FOREMOST_LITTLE_ENDIAN);
+    // SizeOfCode = htoi(&foundat[4], FOREMOST_LITTLE_ENDIAN);
+    // SizeOfInitializedData = htoi(&foundat[8], FOREMOST_LITTLE_ENDIAN);
+    // SizeOfUninitializedData = htoi(&foundat[12], FOREMOST_LITTLE_ENDIAN);
+    // rva = htoi(&foundat[16], FOREMOST_LITTLE_ENDIAN);
+    // align = htoi(&foundat[36], FOREMOST_LITTLE_ENDIAN);
 
-    //sizeofimage = htoi(&foundat[56], FOREMOST_LITTLE_ENDIAN);
-    //size_of_headers = htoi(&foundat[60], FOREMOST_LITTLE_ENDIAN);
+    // sizeofimage = htoi(&foundat[56], FOREMOST_LITTLE_ENDIAN);
+    // size_of_headers = htoi(&foundat[60], FOREMOST_LITTLE_ENDIAN);
     foundat += 224;
 
-    /*Start of sections*/
-    for (i = 0; i < sections; i++)
-        {
-
-        //strncpy(name,foundat,8);
+    // Start of sections
+    for (i = 0; i < sections; i++) {
+        // strncpy(name,foundat,8);
         offset = htoi(&foundat[20], FOREMOST_LITTLE_ENDIAN);
         raw_section_size = htoi(&foundat[16], FOREMOST_LITTLE_ENDIAN);
 
-        //printf("\t%s size=%d offset=%d\n",name,raw_section_size,offset);
+        // printf("\t%s size=%d offset=%d\n",name,raw_section_size,offset);
         foundat += 40;
 
-        //rem+=(raw_section_size%align);
-        //sum+=raw_section_size;
+        //rem += (raw_section_size%align);
+        //sum += raw_section_size;
         sum = offset + raw_section_size;
-        }
+    }
 
     /*
     printf("rva is %d sum= %d\n",rva,sum);
@@ -2077,36 +1943,34 @@ unsigned char *extract_exe(f_state *s, uint64_t c_offset, unsigned char *foundat
     printf("we are off by %d\n",sum-buflen);
     printf("soc=%d ,soidr=%d, souid=%d\n",SizeOfCode,SizeOfInitializedData,SizeOfUninitializedData);
     printf("fs=%d ,extr=%d\n",SizeOfCode+SizeOfInitializedData,SizeOfUninitializedData);
-        */
-    file_size = sum;
-    if (file_size < 512 || file_size > 4 * MEGABYTE)
-        {
-        return foundat + 60;
-        }
+    */
 
-    if (file_size > buflen)
+    file_size = sum;
+    if (file_size < 512 || file_size > 4 * MEGABYTE) {
+        return foundat + 60;
+    }
+
+    if (file_size > buflen) {
         file_size = buflen;
+    }
+
     foundat = buf;
 #ifdef DEBUG
     printf("The file size is  %llu  c_offset:=%llu\n", file_size, c_offset);
 #endif
 
     extractbuf = buf;
-    if (dll == 1)
-        {
+    if (dll == 1) {
         strcpy(needle->suffix, "dll");
         write_to_disk(s, needle, file_size, extractbuf, c_offset + f_offset);
         strcpy(needle->suffix, "exe");
-        }
-    else
-        {
+    } else {
         write_to_disk(s, needle, file_size, extractbuf, c_offset + f_offset);
-        }
+    }
 
     foundat += needle->header_len;
     return (buf + file_size);
 }
-
 
 /********************************************************************************
  *Function: extract_reg
@@ -2114,106 +1978,96 @@ unsigned char *extract_exe(f_state *s, uint64_t c_offset, unsigned char *foundat
  *Return: A pointer to where the EOF of the
  **********************************************************************************/
 unsigned char *extract_reg(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
-                           s_spec *needle, uint64_t f_offset)
-{
-    unsigned char   *buf = foundat;
-    unsigned char   *extractbuf = NULL;
+                           s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
+    unsigned char *extractbuf = NULL;
     int sizeofreg = htoi(&foundat[0x28], FOREMOST_LITTLE_ENDIAN);
-    int file_size=0;
-    if(sizeofreg < 0 || sizeofreg > needle->max_len)    
-    {
-        return (foundat+4);
-    }   
-    foundat+=sizeofreg;
+    int file_size = 0;
+
+    if (sizeofreg < 0 || sizeofreg > needle->max_len) {
+        return (foundat + 4);
+    }
+
+    foundat += sizeofreg;
     file_size = (foundat - buf);
 
     extractbuf = buf;
 
-
     write_to_disk(s, needle, file_size , extractbuf, c_offset + f_offset);
-
             
     return NULL;
 }
+
 /********************************************************************************
  *Function: extract_rar
  *Description:
  *Return: A pointer to where the EOF of the
  **********************************************************************************/
 unsigned char *extract_rar(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
-                           s_spec *needle, uint64_t f_offset)
-{
-    unsigned char   *buf = foundat;
-    unsigned char   *extractbuf = NULL;
-    //uint64_t      file_size = 0;
-    unsigned short  headersize = 0;
-    unsigned short  flags = 0;
-    unsigned int    filesize = 0;
-    unsigned int    tot_file_size = 0;
-    unsigned int    ufilesize = 0;
-    int             i = 0;
-    int             scan = 0;
-    int             flag = 0;
-    int             passwd = 0;
-    uint64_t        bytes_to_search = 50 * KILOBYTE;
-    char            comment[32];
+                           s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
+    unsigned char *extractbuf = NULL;
+    // uint64_t file_size = 0;
+    unsigned short headersize = 0;
+    unsigned short flags = 0;
+    unsigned int filesize = 0;
+    unsigned int tot_file_size = 0;
+    unsigned int ufilesize = 0;
+    int i = 0;
+    int scan = 0;
+    int flag = 0;
+    int passwd = 0;
+    uint64_t bytes_to_search = 50 * KILOBYTE;
+    char comment[32];
 
-    /*Marker Block*/
+    // Marker Block
     headersize = htos(&foundat[5], FOREMOST_LITTLE_ENDIAN);
     foundat += headersize;
 
-    /*Archive Block*/
+    // Archive Block
     headersize = htos(&foundat[5], FOREMOST_LITTLE_ENDIAN);
     filesize = htoi(&foundat[7], FOREMOST_LITTLE_ENDIAN);
 
-    if (foundat[2] != '\x73')
-        {
-        return foundat; /*Error*/
-        }
+    if (foundat[2] != '\x73') {
+        return foundat; // Error
+    }
 
     flags = htos(&foundat[3], FOREMOST_LITTLE_ENDIAN);
-    if ((flags & 0x01) != 0)
-        {
+    if ((flags & 0x01) != 0) {
         sprintf(comment, " Multi-volume:");
         strcat(needle->comment, comment);
-        }
+    }
 
-    if (flags & 0x02)
-        {
+    if (flags & 0x02) {
         sprintf(comment, " an archive comment is present:");
         strcat(needle->comment, comment);
-        }
+    }
 
     foundat += headersize;
 
-    if (foundat[2] != '\x74')
-        {
-        for (i = 0; i < 500; i++)
-            {
-            if (foundat[i] == '\x74')
-                {
+    if (foundat[2] != '\x74') {
+        for (i = 0; i < 500; i++) {
+            if (foundat[i] == '\x74') {
                 foundat += i - 2;
                 scan = 1;
                 break;
-                }
             }
         }
+    }
 
-    if (headersize == 13 && foundat[2] != '\x74')
-        {
-
-        if (scan == 0)
-            {
+    if (headersize == 13 && foundat[2] != '\x74') {
+        if (scan == 0) {
             sprintf(comment, "Encrypted Headers!");
             strcat(needle->comment, comment);
-            }
+        }
 
-        if (buflen - (foundat - buf) >= needle->max_len)
+        if (buflen - (foundat - buf) >= needle->max_len) {
             bytes_to_search = needle->max_len;
-        else
+        } else {
             bytes_to_search = buflen - (foundat - buf);
+        }
 
-        //printf("bytes_to_search:=%d needle->footer_len:=%d needle->header_len:=%d\n",bytes_to_search,needle->footer_len,needle->header_len);
+        // printf("bytes_to_search:=%d needle->footer_len:=%d needle->header_len:=%d\n",bytes_to_search,needle->footer_len,needle->header_len);
         foundat = bm_search(needle->footer,
                             needle->footer_len,
                             foundat,
@@ -2221,55 +2075,53 @@ unsigned char *extract_rar(f_state *s, uint64_t c_offset, unsigned char *foundat
                             needle->footer_bm_table,
                             needle->case_sen,
                             SEARCHTYPE_FORWARD);
-        if (foundat == NULL)
-            {
+
+        if (foundat == NULL) {
             tot_file_size = bytes_to_search;
             foundat = buf + tot_file_size;
-            }
         }
-    else
-        {
-
-        /*Loop through files*/
-        while (foundat[2] == '\x74')
-            {
-
+    } else {
+        // Loop through files
+        while (foundat[2] == '\x74') {
             headersize = htos(&foundat[5], FOREMOST_LITTLE_ENDIAN);
             filesize = htoi(&foundat[7], FOREMOST_LITTLE_ENDIAN);
             ufilesize = htoi(&foundat[11], FOREMOST_LITTLE_ENDIAN);
 
-            if (headersize < 1 || headersize > buflen)
+            if (headersize < 1 || headersize > buflen) {
                 flag = 1;
-            if (filesize < 0 || filesize > buflen)
+            }
+
+            if (filesize < 0 || filesize > buflen) {
                 flag = 1;
-            if ((headersize + filesize) > buflen)
+            }
+
+            if ((headersize + filesize) > buflen) {
                 flag = 1;
-            if (ufilesize < 0)
+            }
+
+            if (ufilesize < 0) {
                 flag = 1;
+            }
 
             flags = htos(&foundat[3], FOREMOST_LITTLE_ENDIAN);
-            if ((flags & 0x04) != 0)
-                {
+            if ((flags & 0x04) != 0) {
                 passwd = 1;
-                }
+            }
 
             tot_file_size = (foundat - buf);
-            if ((tot_file_size + headersize + filesize) > buflen)
-                {
+            if ((tot_file_size + headersize + filesize) > buflen) {
                 break;
-                }
+            }
 
             foundat += headersize + filesize;
-            }
+        }
 
-        if (passwd == 1)
-            {
+        if (passwd == 1) {
             sprintf(comment, "Password Protected:");
             strcat(needle->comment, comment);
-            }
+        }
 
-        if (flag == 1)
-            {
+        if (flag == 1) {
             sprintf(comment, "Encrypted Headers!");
             strcat(needle->comment, comment);
             foundat = bm_search(needle->footer,
@@ -2279,154 +2131,93 @@ unsigned char *extract_rar(f_state *s, uint64_t c_offset, unsigned char *foundat
                                 needle->footer_bm_table,
                                 needle->case_sen,
                                 SEARCHTYPE_FORWARD);
-            if (foundat == NULL)
-                {
+            if (foundat == NULL) {
                 tot_file_size = bytes_to_search;
                 foundat = buf + tot_file_size;
-                }
             }
-
-        if (foundat[2] != '\x7B' && tot_file_size == 0)
-            {
-
-            //printf("Error 7B!!!! %x\n",foundat[2]);
-            return foundat;
-            }
-
-        foundat += 7;
-
         }
 
-    if (foundat)
-        {
+        if (foundat[2] != '\x7B' && tot_file_size == 0) {
+            // printf("Error 7B!!!! %x\n",foundat[2]);
+            return foundat;
+        }
 
-        /*We found the EOF, write the file to disk and return*/
+        foundat += 7;
+    }
+
+    if (foundat) {
+        // We found the EOF, write the file to disk and return
         tot_file_size = (foundat - buf);
-        //if (tot_file_size > buflen)
-        //  file_size = buflen;
 
         extractbuf = buf;
         write_to_disk(s, needle, tot_file_size, extractbuf, c_offset + f_offset);
         return foundat;
-        }
-    else
-        {
+    } else {
         return NULL;
-        }
+    }
 
     return NULL;
 }
 
 unsigned char *extract_file(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
-                            s_spec *needle, uint64_t f_offset)
-{
-    if (needle->type == JPEG)
-        {
+                            s_spec *needle, uint64_t f_offset) {
+    if (needle->type == JPEG) {
         return extract_jpeg(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == GIF)
-        {
+    } else if (needle->type == GIF) {
         return extract_gif(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == PNG)
-        {
+    } else if (needle->type == PNG) {
         return extract_png(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == BMP)
-        {
+    } else if (needle->type == BMP) {
         return extract_bmp(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == RIFF)
-        {
+    } else if (needle->type == RIFF) {
         needle->suffix = "rif";
         return extract_riff(s, c_offset, foundat, buflen, needle, f_offset, "all");
-        }
-    else if (needle->type == AVI)
-        {
+    } else if (needle->type == AVI) {
         return extract_riff(s, c_offset, foundat, buflen, needle, f_offset, "avi");
-        }
-    else if (needle->type == WAV)
-        {
+    } else if (needle->type == WAV) {
         needle->suffix = "rif";
         return extract_riff(s, c_offset, foundat, buflen, needle, f_offset, "wav");
-        }
-    else if (needle->type == WMV)
-        {
+    } else if (needle->type == WMV) {
         return extract_wmv(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == OLE)
-        {
+    } else if (needle->type == OLE) {
         needle->suffix = "ole";
         return extract_ole(s, c_offset, foundat, buflen, needle, f_offset, "all");
-        }
-    else if (needle->type == DOC)
-        {
+    } else if (needle->type == DOC) {
         return extract_ole(s, c_offset, foundat, buflen, needle, f_offset, "doc");
-        }
-    else if (needle->type == PPT)
-        {
+    } else if (needle->type == PPT) {
         return extract_ole(s, c_offset, foundat, buflen, needle, f_offset, "ppt");
-        }
-    else if (needle->type == XLS)
-        {
+    } else if (needle->type == XLS) {
         needle->suffix = "ole";
         return extract_ole(s, c_offset, foundat, buflen, needle, f_offset, "xls");
-        }
-    else if (needle->type == PDF)
-        {
+    } else if (needle->type == PDF) {
         return extract_pdf(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == CPP)
-        {
+    } else if (needle->type == CPP) {
         return extract_cpp(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == HTM)
-        {
+    } else if (needle->type == HTM) {
         return extract_htm(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == MPG)
-        {
+    } else if (needle->type == MPG) {
         return extract_mpg(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == MP4)
-        {
+    } else if (needle->type == MP4) {
         return extract_mp4(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == ZIP)
-        {
+    } else if (needle->type == ZIP) {
         return extract_zip(s, c_offset, foundat, buflen, needle, f_offset, "all");
-        }
-    else if (needle->type == RAR)
-        {
+    } else if (needle->type == RAR) {
         return extract_rar(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == SXW)
-        {
+    } else if (needle->type == SXW) {
         return extract_zip(s, c_offset, foundat, buflen, needle, f_offset, "sxw");
-        }
-    else if (needle->type == SXC)
-        {
+    } else if (needle->type == SXC) {
         return extract_zip(s, c_offset, foundat, buflen, needle, f_offset, "sxc");
-        }
-    else if (needle->type == SXI)
-        {
+    } else if (needle->type == SXI) {
         return extract_zip(s, c_offset, foundat, buflen, needle, f_offset, "sxi");
-        }
-    else if (needle->type == EXE)
-        {
+    } else if (needle->type == EXE) {
         return extract_exe(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == MOV || needle->type == VJPEG)
-        {
+    } else if (needle->type == MOV || needle->type == VJPEG) {
         return extract_mov(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else if (needle->type == CONF)
-        {
+    } else if (needle->type == CONF) {
         return extract_generic(s, c_offset, foundat, buflen, needle, f_offset);
-        }
-    else
-        {
+    } else {
         return NULL;
-        }
-    return NULL;    
+    }
+
+    return NULL;
 }
