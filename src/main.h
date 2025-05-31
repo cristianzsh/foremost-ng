@@ -9,10 +9,10 @@
 #ifndef __FOREMOST_H
 #define __FOREMOST_H
 
-/* Version information is defined in the Makefile */
+// Version information is defined in the Makefile
 #define AUTHOR           "Cristian Souza"
 
-/* We use \r\n for newlines on Win32; redundant elsewhere but harmless */
+// We use \r\n for newlines on Win32; redundant elsewhere but harmless
 #define COPYRIGHT        "Original authors: Jesse Kornblum, Kris Kendall, and Nick Mikus\r\n" \
 "This program is a work of the US Government. In accordance with 17 USC 105,\r\n" \
 "copyright protection is not available for any work of the US Government.\r\n" \
@@ -21,7 +21,7 @@
 
 #define _GNU_SOURCE
 
-/* Standard headers */
+// Standard headers
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
@@ -37,11 +37,11 @@
 #include <time.h>
 #include <unistd.h>
 
-/* System headers */
+// System headers
 #include <sys/stat.h>
 #include <sys/types.h>
 
-/* Platform-specific includes and definitions */
+// Platform-specific includes and definitions
 #ifdef __LINUX
   #include <endian.h>
   #include <sys/ioctl.h>
@@ -57,20 +57,14 @@
   #define __U16_TYPE unsigned short
 #endif
 
-/* Boolean constants */
+// Boolean constants
 #define TRUE             1
 #define FALSE            0
 
-/* Size constants */
+// Size constants
 #define ONE_MEGABYTE     1048576
 
-/* Type definitions for Solaris */
-#ifdef __SOLARIS
-  #define uint32_t unsigned int
-  #define uint64_t unsigned long long
-#endif
-
-/* Identify UNIX if not Windows */
+// Identify UNIX if not Windows
 #ifndef __WIN32
   #ifndef __UNIX
     #define __UNIX
@@ -90,11 +84,11 @@
     #define BYTE_ORDER    LITTLE_ENDIAN
   #endif
 
-  /* Avoid warnings on older systems */
+  // Avoid warnings on older systems
   int fseeko(FILE *stream, off_t offset, int whence);
   off_t ftello(FILE *stream);
 
-  /* Prompts and formatting */
+  // Prompts and formatting
   #define CMD_PROMPT      "$"
   #define DIR_SEPARATOR   '/'
   #define NEWLINE         "\n"
@@ -103,7 +97,7 @@
 #endif /* __UNIX */
 
 #ifdef __WIN32
-  /* off_t must be unsigned */
+  // off_t must be unsigned
   #undef off_t
   #define off_t unsigned long
 
@@ -113,13 +107,13 @@
   #define LINE_LENGTH     72
   #define BLANK_LINE      "                                                                        "
 
-  /* Map file functions */
+  // Map file functions
   #define ftello          ftell
   #define fseeko          fseek
 
   #define uint32_t       unsigned long
 
-  /* Windows equivalents */
+  // Windows equivalents
   #define lstat(A,B)      stat(A,B)
 
   #ifdef _WIN32
@@ -135,15 +129,15 @@
   int getopt(int argc, char *const argv[], const char *optstring);
 #endif /* __WIN32 */
 
-/* On non-glibc systems we have to manually set the __progname variable */
+// On non-glibc systems we have to manually set the __progname variable
 extern char *__progname;
 
-/* Program defaults */
+// Program defaults
 #define MAX_STRING_LENGTH    1024
 #define MAX_BUILTIN          50
 #define COMMENT_LENGTH       64
 
-/* Mode flags */
+// Mode flags
 #define mode_none            0
 #define mode_verbose         (1 << 1)
 #define mode_quiet           (1 << 2)
@@ -154,21 +148,21 @@ extern char *__progname;
 #define mode_multi_file      (1 << 7)
 #define mode_virustotal      (1 << 8)
 
-/* Search specifications */
+// Search specifications
 #define MAX_NEEDLES          254
 #define NUM_SEARCH_SPEC_ELEMENTS 6
 #define MAX_SUFFIX_LENGTH    8
 #define MAX_FILE_TYPES       100
 #define FOREMOST_NOEXTENSION_SUFFIX "NONE"
 
-/* Defaults */
+// Defaults
 #define DEFAULT_MODE            mode_none
 #define DEFAULT_CONFIG_FILE     "foremost.conf"
 #define DEFAULT_OUTPUT_DIRECTORY "output"
 #define AUDIT_FILE_NAME         "audit.txt"
 #define FOREMOST_DIVIDER        "------------------------------------------------------------------"
 
-/* File type identifiers */
+// File type identifiers
 #define JPEG     0
 #define GIF      1
 #define BMP      2
@@ -203,7 +197,7 @@ extern char *__progname;
 #define PPTX     31
 #define MP4      32
 
-/* Data size units */
+// Data size units
 #define KILOBYTE      1024
 #define MEGABYTE      (1024 * KILOBYTE)
 #define GIGABYTE      (1024 * MEGABYTE)
@@ -219,23 +213,23 @@ extern char *__progname;
 #define UNITS_PETAB   5
 #define UNITS_EXAB    6
 
-/* Search types */
+// Search types
 #define SEARCHTYPE_FORWARD       0
 #define SEARCHTYPE_REVERSE       1
 #define SEARCHTYPE_FORWARD_NEXT  2
 #define SEARCHTYPE_ASCII         3
 
-/* Endianness */
+// Endianness
 #define FOREMOST_BIG_ENDIAN      0
 #define FOREMOST_LITTLE_ENDIAN   1
 
-/* Default chunk size (MB) */
+// Default chunk size (MB)
 #define CHUNK_SIZE               100
 
-/* Global wildcard */
+// Global wildcard
 extern char wildcard;
 
-/* State structure */
+// State structure
 typedef struct f_state {
     off_t      mode;
     char      *config_file;
@@ -254,14 +248,14 @@ typedef struct f_state {
     int        time_stamp;
 } f_state;
 
-/* Marker structure */
+// Marker structure
 typedef struct marker {
     unsigned char *value;
     int            len;
     size_t         marker_bm_table[UCHAR_MAX + 1];
 } marker;
 
-/* Search specification */
+// Search specification
 typedef struct s_spec {
     char      *suffix;
     int        type;
@@ -284,7 +278,7 @@ typedef struct s_spec {
 
 extern s_spec search_spec[MAX_BUILTIN];
 
-/* File info */
+// File info
 typedef struct f_info {
     char *file_name;
     off_t total_bytes;
@@ -298,10 +292,10 @@ typedef struct f_info {
     int   is_stdin;
 } f_info;
 
-/* Signal flag */
+// Signal flag
 extern int signal_caught;
 
-/* Function prototypes */
+// Function prototypes
 int   initialize_state(f_state *s, int argc, char **argv);
 void  free_state(f_state *s);
 char *get_invocation(f_state *s);

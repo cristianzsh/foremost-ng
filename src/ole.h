@@ -35,32 +35,32 @@
 #include <unistd.h>
 
 struct OLE_HDR {
-    char        magic[8];               /* 0 */
-    char        clsid[16];              /* 8 */
-    uint16_t    uMinorVersion;          /* 24 */
-    uint16_t    uDllVersion;            /* 26 */
-    uint16_t    uByteOrder;             /* 28 */
-    uint16_t    uSectorShift;           /* 30 */
-    uint16_t    uMiniSectorShift;       /* 32 */
-    uint16_t    reserved;               /* 34 */
-    uint32_t   reserved1;               /* 36 */
-    uint32_t   reserved2;               /* 40 */
-    uint32_t   num_FAT_blocks;          /* 44 */
-    uint32_t   root_start_block;        /* 48 */
-    uint32_t   dfsignature;             /* 52 */
-    uint32_t   miniSectorCutoff;        /* 56 */
-    uint32_t   dir_flag;                /* 60: first sec in mini FAT chain */
-    uint32_t   csectMiniFat;            /* 64: number of sectors in minifat */
-    uint32_t   FAT_next_block;          /* 68 */
-    uint32_t   num_extra_FAT_blocks;    /* 72 */
-    /* FAT block list starts here: first 109 entries */
+    char        magic[8];               // 0
+    char        clsid[16];              // 8
+    uint16_t    uMinorVersion;          // 24
+    uint16_t    uDllVersion;            // 26
+    uint16_t    uByteOrder;             // 28
+    uint16_t    uSectorShift;           // 30
+    uint16_t    uMiniSectorShift;       // 32
+    uint16_t    reserved;               // 34
+    uint32_t   reserved1;               // 36
+    uint32_t   reserved2;               // 40
+    uint32_t   num_FAT_blocks;          // 44
+    uint32_t   root_start_block;        // 48
+    uint32_t   dfsignature;             // 52
+    uint32_t   miniSectorCutoff;        // 56
+    uint32_t   dir_flag;                // 60: first sec in mini FAT chain
+    uint32_t   csectMiniFat;            // 64: number of sectors in minifat
+    uint32_t   FAT_next_block;          // 68
+    uint32_t   num_extra_FAT_blocks;    // 72
+    // FAT block list starts here: first 109 entries
 };
 
 struct OLE_DIR {
     char            name[64];
     unsigned short  namsiz;
     char            type;
-    char            bflags;             /* 0 or 1 */
+    char            bflags;             // 0 or 1
     unsigned long   prev_dirent;
     unsigned long   next_dirent;
     unsigned long   dir_dirent;
@@ -70,9 +70,9 @@ struct OLE_DIR {
     int             days1;
     int             secs2;
     int             days2;
-    unsigned long   start_block;        /* starting SECT of stream */
+    unsigned long   start_block;        // Starting SECT of stream
     unsigned long   size;
-    short           reserved;           /* must be 0 */
+    short           reserved;           // Must be 0
 };
 
 struct DIRECTORY {
@@ -93,23 +93,26 @@ struct DIRECTORY {
 extern struct DIRECTORY *dirlist;
 extern struct DIRECTORY *dl;
 
-int             get_dir_block(unsigned char *fd, int blknum, int buffersize);
-int             get_dir_info(unsigned char *src);
-void            extract_stream(char *fd, int blknum, int size);
-void            dump_header(struct OLE_HDR *h);
-int             dump_dirent(int which_one);
+int get_dir_block(unsigned char *fd, int blknum, int buffersize);
+int get_dir_info(unsigned char *src);
+void extract_stream(char *fd, int blknum, int size);
+void dump_header(struct OLE_HDR *h);
+int dump_dirent(int which_one);
 
-int             get_block(unsigned char *fd, int blknum, unsigned char *dest,
-                          long long int buffersize);
-int             get_FAT_block(unsigned char *fd, int blknum, int *dest,
-                              int buffersize);
-int             reorder_dirlist(struct DIRECTORY *dir, int level);
+int get_block(unsigned char *fd, int blknum, unsigned char *dest,
+              long long int buffersize);
 
-unsigned char  *get_ole_block(unsigned char *fd, int blknum,
-                              unsigned long long buffersize);
+int get_FAT_block(unsigned char *fd, int blknum, int *dest,
+                  int buffersize);
+
+int reorder_dirlist(struct DIRECTORY *dir, int level);
+
+unsigned char *get_ole_block(unsigned char *fd, int blknum,
+                             unsigned long long buffersize);
+
 struct OLE_HDR *reverseBlock(struct OLE_HDR *dest, struct OLE_HDR *h);
 
-void            dump_ole_header(struct OLE_HDR *h);
-void           *Malloc(size_t bytes);
-void            die(char *fmt, void *arg);
-void            init_ole(void);
+void dump_ole_header(struct OLE_HDR *h);
+void *Malloc(size_t bytes);
+void die(char *fmt, void *arg);
+void init_ole(void);

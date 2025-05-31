@@ -19,17 +19,17 @@
  *   - extra field length  2 bytes
  */
 struct zipLocalFileHeader {
-    uint32_t signature;           /* 0x04034b50 */
-    uint16_t version;             /* version needed to extract */
-    uint16_t genFlag;             /* general purpose bit flag */
-    int16_t  compression;         /* compression method */
-    uint16_t last_mod_time;       /* last modification time */
-    uint16_t last_mod_date;       /* last modification date */
-    uint32_t crc;                 /* CRC-32 checksum */
-    uint32_t compressed;          /* compressed size */
-    uint32_t uncompressed;        /* uncompressed size */
-    uint16_t filename_length;     /* length of the filename */
-    uint16_t extra_length;        /* length of the extra field */
+    uint32_t signature;           // 0x04034b50
+    uint16_t version;             // version needed to extract
+    uint16_t genFlag;             // general purpose bit flag
+    int16_t  compression;         // compression method
+    uint16_t last_mod_time;       // last modification time
+    uint16_t last_mod_date;       // last modification date
+    uint32_t crc;                 // CRC-32 checksum
+    uint32_t compressed;          // compressed size
+    uint32_t uncompressed;        // uncompressed size
+    uint16_t filename_length;     // length of the filename
+    uint16_t extra_length;        // length of the extra field
 };
 
 /*
@@ -53,20 +53,20 @@ struct zipLocalFileHeader {
  *   - relative offset         4 bytes (not included)
  */
 struct zipCentralFileHeader {
-    uint32_t signature;           /* 0x02014b50 */
-    uint8_t  version_extract[2];  /* version needed to extract */
-    uint8_t  version_madeby[2];   /* version made by */
-    uint16_t genFlag;             /* general purpose bit flag */
-    uint16_t compression;         /* compression method */
-    uint16_t last_mod_time;       /* last modification time */
-    uint16_t last_mod_date;       /* last modification date */
-    uint32_t crc;                 /* CRC-32 checksum */
-    uint32_t compressed;          /* compressed size */
-    uint32_t uncompressed;        /* uncompressed size */
-    uint16_t filename_length;     /* length of the filename */
-    uint16_t extra_length;        /* length of the extra field */
-    uint16_t filecomment_length;  /* length of the comment */
-    uint16_t disk_number_start;   /* disk number where central dir starts */
+    uint32_t signature;           // 0x02014b50
+    uint8_t  version_extract[2];  // version needed to extract
+    uint8_t  version_madeby[2];   // version made by
+    uint16_t genFlag;             // general purpose bit flag
+    uint16_t compression;         // compression method
+    uint16_t last_mod_time;       // last modification time
+    uint16_t last_mod_date;       // last modification date
+    uint32_t crc;                 // CRC-32 checksum
+    uint32_t compressed;          // compressed size
+    uint32_t uncompressed;        // uncompressed size
+    uint16_t filename_length;     // length of the filename
+    uint16_t extra_length;        // length of the extra field
+    uint16_t filecomment_length;  // length of the comment
+    uint16_t disk_number_start;   // disk number where central dir starts
 };
 
 /*
@@ -81,14 +81,14 @@ struct zipCentralFileHeader {
  *   - comment length          2 bytes
  */
 struct zipEndCentralFileHeader {
-    uint32_t signature;           /* 0x06054b50 */
-    uint16_t disk_number;         /* number of this disk */
-    uint16_t start_disk;          /* disk with central directory */
-    uint16_t entries_this;        /* entries on this disk */
-    uint16_t entries_total;       /* total entries in central dir */
-    uint32_t size_central;        /* size of central directory */
-    uint32_t offset;              /* offset of start of central dir */
-    uint16_t comment_length;      /* length of the zip file comment */
+    uint32_t signature;           // 0x06054b50
+    uint16_t disk_number;         // number of this disk
+    uint16_t start_disk;          // disk with central directory
+    uint16_t entries_this;        // entries on this disk
+    uint16_t entries_total;       // total entries in central dir
+    uint32_t size_central;        // size of central directory
+    uint32_t offset;              // offset of start of central dir
+    uint16_t comment_length;      // length of the zip file comment
 };
 
 #include <stdio.h>
