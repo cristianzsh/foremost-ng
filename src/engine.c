@@ -15,15 +15,13 @@
 /**
  * Print animated sliding progress bar
  */
-void print_sliding_bar() {
-    static int frame = 0;
-    const char *templates[] = {
-        "[=     ]", "[ =    ]", "[  =   ]", "[   =  ]", "[    = ]", "[     =]",
-        "[    = ]", "[   =  ]", "[  =   ]", "[ =    ]"
-    };
-    fprintf(stderr, "\r" ANSI_YELLOW "%s" ANSI_RESET, templates[frame]);
+void print_sliding_bar(void) {
+    static int pos = 0;
+    char bar[9] = "[      ]";
+    bar[1 + (pos % 6)] = '=';
+    fprintf(stderr, "\r" ANSI_YELLOW "%s" ANSI_RESET, bar);
     fflush(stderr);
-    frame = (frame + 1) % (sizeof(templates) / sizeof(templates[0]));
+    pos = (pos + 1) % 6;
 }
 
 /**
