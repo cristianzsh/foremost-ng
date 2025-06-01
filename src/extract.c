@@ -2142,6 +2142,174 @@ unsigned char *extract_rar(f_state *s, uint64_t c_offset, unsigned char *foundat
 }
 
 /**
+ * Carve out either a 32-bit or 64-bit little-endian ELF.
+ */
+unsigned char *
+extract_elf(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+            s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
+    uint64_t file_size = 0;
+    uint64_t max_seg_end = 0;
+
+    // We need at least 16 bytes to verify the ELF magic and class/data
+    if (buflen < 16) {
+        return foundat + needle->header_len;
+    }
+
+    // Check the 4-byte magic: 0x7F 'E' 'L' 'F'
+    if (buf[0] != 0x7F || buf[1] != 'E' || buf[2] != 'L' || buf[3] != 'F') {
+        // Not an ELF after all
+        return foundat + needle->header_len;
+    }
+
+    /* Determine 32-bit vs 64-bit and endianness:
+        buf[4] == EI_CLASS: 1 = ELFCLASS32, 2 = ELFCLASS64
+        buf[5] == EI_DATA:  1 = ELFDATA2LSB (little-endian), 2 = big-endian
+    */
+    unsigned char ei_class = buf[4];
+    unsigned char ei_data  = buf[5];
+
+    // If not LE, skip.
+    if (ei_data != 1) {
+        return foundat + needle->header_len;
+    }
+
+    if (ei_class == 1) {
+        if (buflen < 52) {
+            return foundat + needle->header_len;
+        }
+
+        /* Offsets in the ELF32 header (all little-endian):
+           e_phoff   (4 bytes) at offset 0x1C
+           e_phentsize (2 bytes) at offset 0x2A
+           e_phnum   (2 bytes) at offset 0x2C
+        */
+        uint32_t e_phoff_32     = read_le32(&buf[0x1C]);
+        uint16_t e_phentsize_32 = read_le16(&buf[0x2A]);
+        uint16_t e_phnum_32     = read_le16(&buf[0x2C]);
+
+        // Sanity check: program header table must fit within buflen
+        if (e_phoff_32 == 0 ||
+            ((uint64_t)e_phoff_32 + (uint64_t)e_phnum_32 * (uint64_t)e_phentsize_32) > buflen ||
+            e_phnum_32 == 0 ||
+            e_phentsize_32 < 32) {
+            return foundat + needle->header_len;
+        }
+
+        // Loop through each of the e_phnum_32 entries
+        for (uint16_t i = 0; i < e_phnum_32; i++) {
+            uint64_t phdr_start = (uint64_t)e_phoff_32 + (uint64_t)i * (uint64_t)e_phentsize_32;
+
+            /* In ELF32 program header:
+               p_type   (4 bytes at offset +0)
+               p_offset (4 bytes at offset +4)
+               p_filesz (4 bytes at offset +16)
+            */
+            if (phdr_start + 20 > buflen) {
+                // This header would run off the buffer
+                return foundat + needle->header_len;
+            }
+
+            uint32_t p_type_32   = read_le32(&buf[phdr_start + 0]);
+            if (p_type_32 == 1 /* PT_LOAD */) {
+                uint32_t p_offset_32 = read_le32(&buf[phdr_start + 4]);
+                uint32_t p_filesz_32 = read_le32(&buf[phdr_start + 16]);
+                uint64_t this_end_32 = (uint64_t)p_offset_32 + (uint64_t)p_filesz_32;
+                if (this_end_32 > max_seg_end) {
+                    max_seg_end = this_end_32;
+                }
+            }
+        }
+
+        // If we never saw a PT_LOAD, skip just the magic
+        if (max_seg_end == 0) {
+            return foundat + needle->header_len;
+        }
+
+        // Clamp to what's in our buffer
+        if (max_seg_end > buflen) {
+            max_seg_end = buflen;
+        }
+        file_size = max_seg_end;
+
+        // Write the carved ELF32 out
+        needle->suffix = "elf";
+        write_to_disk(s, needle, file_size, buf, c_offset + f_offset);
+
+        // Return pointer just past the carved file
+        return buf + file_size;
+    } else if (ei_class == 2) {
+        // An ELF64 header is 64 bytes long
+        if (buflen < 64) {
+            return foundat + needle->header_len;
+        }
+
+        /* Offsets in the ELF64 header (all little-endian):
+           e_phoff    (8 bytes) at offset 0x20
+           e_phentsize (2 bytes) at offset 0x36
+           e_phnum    (2 bytes) at offset 0x38
+        */
+        uint64_t e_phoff_64     = read_le64(&buf[0x20]);
+        uint16_t e_phentsize_64 = read_le16(&buf[0x36]);
+        uint16_t e_phnum_64     = read_le16(&buf[0x38]);
+
+        // Sanity check: program header table must fit within buflen
+        if (e_phoff_64 == 0 ||
+            e_phoff_64 + (uint64_t)e_phnum_64 * (uint64_t)e_phentsize_64 > buflen ||
+            e_phnum_64 == 0 ||
+            e_phentsize_64 < 56) {
+            return foundat + needle->header_len;
+        }
+
+        // Loop through each of the e_phnum_64 entries
+        for (uint16_t i = 0; i < e_phnum_64; i++) {
+            uint64_t phdr_start = e_phoff_64 + (uint64_t)i * (uint64_t)e_phentsize_64;
+
+            /* In ELF64 program header (all little-endian):
+               p_type   (4 bytes at offset +0)
+               p_flags  (4 bytes at offset +4) -- ignored here
+               p_offset (8 bytes at offset +8)
+               p_filesz (8 bytes at offset +32)
+            */
+            if (phdr_start + 40 > buflen) {
+                // This header would run off the buffer
+                return foundat + needle->header_len;
+            }
+
+            uint32_t p_type_64 = read_le32(&buf[phdr_start + 0]);
+            if (p_type_64 == 1 /* PT_LOAD */) {
+                uint64_t p_offset_64 = read_le64(&buf[phdr_start + 8]);
+                uint64_t p_filesz_64 = read_le64(&buf[phdr_start + 32]);
+                uint64_t this_end_64 = p_offset_64 + p_filesz_64;
+                if (this_end_64 > max_seg_end) {
+                    max_seg_end = this_end_64;
+                }
+            }
+        }
+
+        // If we never saw a PT_LOAD, skip just the magic
+        if (max_seg_end == 0) {
+            return foundat + needle->header_len;
+        }
+
+        // Clamp to what's in our buffer
+        if (max_seg_end > buflen) {
+            max_seg_end = buflen;
+        }
+        file_size = max_seg_end;
+
+        // Write the carved ELF64 out
+        needle->suffix = "elf";
+        write_to_disk(s, needle, file_size, buf, c_offset + f_offset);
+
+        // Return pointer just past the carved file
+        return buf + file_size;
+    }
+
+    return foundat + needle->header_len;
+}
+
+/**
  * Dispatcher that calls the appropriate extract_*
  * function based on needle->type (JPEG, PNG, AVI, ZIP, OLE, etc.).
  */
@@ -2197,6 +2365,8 @@ unsigned char *extract_file(f_state *s, uint64_t c_offset, unsigned char *founda
         return extract_zip(s, c_offset, foundat, buflen, needle, f_offset, "sxi");
     } else if (needle->type == EXE) {
         return extract_exe(s, c_offset, foundat, buflen, needle, f_offset);
+    } else if (needle->type == ELF) {
+        return extract_elf(s, c_offset, foundat, buflen, needle, f_offset);
     } else if (needle->type == MOV || needle->type == VJPEG) {
         return extract_mov(s, c_offset, foundat, buflen, needle, f_offset);
     } else if (needle->type == CONF) {

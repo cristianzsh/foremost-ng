@@ -351,6 +351,10 @@ unsigned char *bm_search(unsigned char *needle, size_t needle_len, unsigned char
 unsigned char *bm_search_skipn(unsigned char *needle, size_t needle_len, unsigned char *haystack, size_t haystack_len,
                                 size_t table[UCHAR_MAX+1], int casesensitive, int searchtype, int start_pos);
 
+uint16_t read_le16(unsigned char *buf);
+uint32_t read_le32(unsigned char *buf);
+uint64_t read_le64(unsigned char *buf);
+
 #endif /* __FOREMOST_H */
 
 /* BUILTIN */

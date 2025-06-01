@@ -366,6 +366,9 @@ void init_all(f_state *state) {
     init_builtin(state, EXE, "exe", "MZ", NULL,
                  2, 0, 1 * MEGABYTE, TRUE);
 
+    init_builtin(state, ELF, "elf", "\x7F\x45\x4C\x46",
+                 NULL, 4, 0, 50 * MEGABYTE, TRUE);
+
     index = init_builtin(state, PNG, "png",
                          "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A",
                          "IEND", 8, 4, 1 * MEGABYTE, TRUE);
@@ -421,18 +424,18 @@ int set_search_def(f_state *s, char *ft, uint64_t max_file_size) {
                      NULL, 8, 0, 600 * MEGABYTE, TRUE);
     } else if (strcmp(ft, "exe") == 0) {
         if (max_file_size == 0) {
-            max_file_size = 1 * MEGABYTE;
+            max_file_size = 2 * MEGABYTE;
         }
 
         init_builtin(s, EXE, "exe", "MZ", NULL,
                      2, 0, max_file_size, TRUE);
     } else if (strcmp(ft, "elf") == 0) {
         if (max_file_size == 0) {
-            max_file_size = 1 * MEGABYTE;
+            max_file_size = 2 * MEGABYTE;
         }
 
-        init_builtin(s, ELF, "elf", "0x7fELF", NULL,
-                     4, 0, max_file_size, TRUE);
+        init_builtin(s, ELF, "elf", "\x7F\x45\x4C\x46",
+                     NULL, 4, 0, max_file_size, TRUE);
     } else if (strcmp(ft, "reg") == 0) {
         if (max_file_size == 0) {
             max_file_size = 2 * MEGABYTE;

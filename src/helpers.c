@@ -339,3 +339,24 @@ int displayPosition(f_state *s, f_info *i, uint64_t pos) {
 
     return 1;
 }
+
+/**
+ * Helper: read a little-endian 2-byte integer from buf.
+ */
+uint16_t read_le16(unsigned char *buf) {
+    return htos(buf, FOREMOST_LITTLE_ENDIAN);
+}
+
+/**
+ * Helper: read a little-endian 4-byte integer from buf.
+ */
+uint32_t read_le32(unsigned char *buf) {
+    return htoi(buf, FOREMOST_LITTLE_ENDIAN);
+}
+
+/**
+ * Helper: read a little-endian 8-byte integer from buf.
+ */
+uint64_t read_le64(unsigned char *buf) {
+    return htoi(buf, FOREMOST_LITTLE_ENDIAN);
+}
