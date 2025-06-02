@@ -2516,6 +2516,111 @@ unsigned char *extract_evtx(f_state *s, uint64_t c_offset, unsigned char *founda
     return buf + carve_size;
 }
 
+unsigned char *extract_script(f_state *s, uint64_t c_offset, unsigned char *foundat,
+                              uint64_t buflen, s_spec *needle, uint64_t f_offset) {
+    const uint64_t MIN_SCRIPT_SIZE = 32;  // don’t carve anything smaller than 32 bytes
+    unsigned char *buf = foundat;
+    uint64_t max_len = needle->max_len;
+    uint64_t full_len = 0;
+    uint64_t carve_limit;
+    uint64_t carve_len;
+    unsigned char *next_hdr  = NULL;
+    uint64_t search_len;
+
+    if (buflen < needle->header_len) {
+        return foundat + needle->header_len;
+    }
+
+    if (memcmp(buf, needle->header, needle->header_len) != 0) {
+        return foundat + needle->header_len;
+    }
+
+    // Find the maximum possible carve length: min(buflen, max_len)
+    carve_limit = (buflen < max_len) ? buflen : max_len;
+    if (carve_limit <= needle->header_len) {
+        // Nothing beyond the header
+        return foundat + needle->header_len;
+    }
+
+    // Scan forward [buf .. buf+carve_limit) until we hit a non-printable
+    // (other than newline, tab, carriage-return). That defines full_len.
+    while (full_len < carve_limit) {
+        unsigned char c = buf[full_len];
+        if (isprint(c) || c == '\n' || c == '\r' || c == '\t') {
+            full_len++;
+        } else {
+            break;
+        }
+    }
+    if (full_len <= needle->header_len) {
+        return foundat + needle->header_len;
+    }
+
+    if (full_len > 1) {
+        search_len = full_len - 1;
+        next_hdr = bm_search(
+            (unsigned char *)"#!",
+            2,
+            buf + 1,
+            search_len,
+            needle->header_bm_table,
+            TRUE,
+            SEARCHTYPE_FORWARD
+        );
+    }
+
+    if (next_hdr) {
+        carve_len = (uint64_t)(next_hdr - buf);
+    } else {
+        carve_len = full_len;
+    }
+
+    if (carve_len < MIN_SCRIPT_SIZE) {
+        // Too short to be a real script
+        return foundat + needle->header_len;
+    }
+
+    {
+        unsigned char *nl = NULL;
+        uint64_t offset  = needle->header_len;
+        // Find the first newline character
+        while (offset < carve_len) {
+            if (buf[offset] == '\n' || buf[offset] == '\r') {
+                nl = buf + offset;
+                break;
+            }
+            offset++;
+        }
+        if (nl) {
+            // Scan from the character after that newline up to carve_len
+            unsigned char *p = nl + 1;
+            unsigned char *end = buf + carve_len;
+            int found_real = 0;
+            while (p < end) {
+                if (!isspace(*p)) {
+                    if (*p != '#') {
+                        // Found something other than whitespace or '#' -> valid body
+                        found_real = 1;
+                        break;
+                    }
+                    // If it’s '#', it’s still a comment; keep scanning
+                }
+                p++;
+            }
+            if (!found_real) {
+                // No real content after the shebang‐line: skip carve
+                return foundat + needle->header_len;
+            }
+        } else {
+            return foundat + needle->header_len;
+        }
+    }
+
+    write_to_disk(s, needle, carve_len, buf, c_offset + f_offset);
+
+    return buf + carve_len;
+}
+
 /**
  * Dispatcher that calls the appropriate extract_*
  * function based on needle->type (JPEG, PNG, AVI, ZIP, OLE, etc.).
@@ -2578,6 +2683,8 @@ unsigned char *extract_file(f_state *s, uint64_t c_offset, unsigned char *founda
         return extract_macho(s, c_offset, foundat, buflen, needle, f_offset);
     } else if (needle->type == EVTX) {
         return extract_evtx(s, c_offset, foundat, buflen, needle, f_offset);
+    } else if (needle->type == SCRIPT) {
+        return extract_script(s, c_offset, foundat, buflen, needle, f_offset);
     } else if (needle->type == MOV || needle->type == VJPEG) {
         return extract_mov(s, c_offset, foundat, buflen, needle, f_offset);
     } else if (needle->type == CONF) {

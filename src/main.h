@@ -198,6 +198,7 @@ extern char *__progname;
 #define MP4      32
 #define MACHO    33
 #define EVTX     34
+#define SCRIPT   35
 
 // Data size units
 #define KILOBYTE      1024

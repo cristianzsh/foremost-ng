@@ -381,6 +381,9 @@ void init_all(f_state *state) {
     init_builtin(state, EVTX, "evtx", "ElfFile\0\0",
                  NULL, 8, 0, 100 * MEGABYTE, TRUE);
 
+    init_builtin(state, SCRIPT, "script", "#!",
+                 NULL, 2, 0, 2 * MEGABYTE, TRUE);
+
     index = init_builtin(state, PNG, "png",
                          "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A",
                          "IEND", 8, 4, 1 * MEGABYTE, TRUE);
@@ -689,6 +692,9 @@ int set_search_def(f_state *s, char *ft, uint64_t max_file_size) {
 
         init_builtin(s, EVTX, "evtx", "ElfFile\0\0", NULL,
                      8, 0, max_file_size, TRUE);
+    } else if (strcmp(ft, "script") == 0) {
+        init_builtin(s, SCRIPT, "script", "#!",
+                     NULL, 2, 0, 2 * MEGABYTE, TRUE);
     } else if (strcmp(ft, "png") == 0) {
         if (max_file_size == 0) {
             max_file_size = 1 * MEGABYTE;
