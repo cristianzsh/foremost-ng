@@ -2144,9 +2144,8 @@ unsigned char *extract_rar(f_state *s, uint64_t c_offset, unsigned char *foundat
 /**
  * Carve out either a 32-bit or 64-bit little-endian ELF.
  */
-unsigned char *
-extract_elf(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
-            s_spec *needle, uint64_t f_offset) {
+unsigned char *extract_elf(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+                           s_spec *needle, uint64_t f_offset) {
     unsigned char *buf = foundat;
     uint64_t file_size = 0;
     uint64_t max_seg_end = 0;
@@ -2310,6 +2309,214 @@ extract_elf(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t bufl
 }
 
 /**
+ * Carve Mach-O binaries.
+ */
+unsigned char *extract_macho(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+                             s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
+    uint64_t file_size = 0;
+    uint64_t max_end = 0;
+
+    // Need at least 4 bytes to decide
+    if (buflen < 4) {
+        return foundat + needle->header_len;
+    }
+
+    // Check the first 4 bytes
+    // FAT magic (always big-endian on disk) = 0xCA FE BA BE
+    if (buf[0] == 0xCA && buf[1] == 0xFE && buf[2] == 0xBA && buf[3] == 0xBE) {
+        // Need at least 8 bytes: magic (4) + nfat_arch (4)
+        if (buflen < 8) {
+            return foundat + needle->header_len;
+        }
+
+        uint32_t nfat_arch = read_be32(&buf[4]);
+        uint64_t arch_table_size = (uint64_t)nfat_arch * 20ULL;
+        if (8ULL + arch_table_size > buflen) {
+            return foundat + needle->header_len;
+        }
+
+        // Parse each fat_arch
+        for (uint32_t i = 0; i < nfat_arch; i++) {
+            uint64_t entry_offset = 8 + (uint64_t)i * 20ULL;
+            uint32_t arch_fileoff = read_be32(&buf[entry_offset + 8]);
+            uint32_t arch_size = read_be32(&buf[entry_offset + 12]);
+            uint64_t this_end = (uint64_t)arch_fileoff + (uint64_t)arch_size;
+            if (this_end > max_end) {
+                max_end = this_end;
+            }
+        }
+        if (max_end == 0) {
+            return foundat + needle->header_len;
+        }
+
+        file_size = (max_end > buflen ? buflen : max_end);
+        needle->suffix = "macho";
+        write_to_disk(s, needle, file_size, buf, c_offset + f_offset);
+        return buf + file_size;
+    }
+
+    // For thin Mach-O, read 4-byte magic as little-endian integer
+    uint32_t magic_le = read_le32(buf);
+
+    // 32-bit Mach-O magic (LE form) = 0xCEFAEDFE
+    if (magic_le == 0xCEFAEDFE) {
+        // Need at least a full 32-bit mach_header (28 bytes)
+        if (buflen < 28) {
+            return foundat + needle->header_len;
+        }
+
+        // ncmds at offset 16, sizeofcmds at offset 20 (both LE)
+        uint32_t ncmds     = read_le32(&buf[16]);
+        uint32_t sizeofcmds= read_le32(&buf[20]);
+        // Total load commands region = sizeofcmds bytes, starting at offset 28
+        if (28ULL + (uint64_t)sizeofcmds > buflen) {
+            return foundat + needle->header_len;
+        }
+        uint64_t lc_ptr = 28;
+        for (uint32_t i = 0; i < ncmds; i++) {
+            if (lc_ptr + 8 > buflen) {
+                break;
+            }
+            uint32_t cmd = read_le32(&buf[lc_ptr + 0]);
+            uint32_t cmdsize = read_le32(&buf[lc_ptr + 4]);
+            if (cmdsize == 0 || (lc_ptr + cmdsize) > buflen) {
+                break;
+            }
+
+            if (cmd == 0x1) {
+                if (lc_ptr + 40 <= buflen) {
+                    uint32_t fileoff = read_le32(&buf[lc_ptr + 32]);
+                    uint32_t filesize32 = read_le32(&buf[lc_ptr + 36]);
+                    uint64_t this_end = (uint64_t)fileoff + (uint64_t)filesize32;
+                    if (this_end > max_end) {
+                        max_end = this_end;
+                    }
+                }
+            }
+            lc_ptr += cmdsize;
+        }
+        if (max_end == 0) {
+            return foundat + needle->header_len;
+        }
+        file_size = (max_end > buflen ? buflen : max_end);
+        needle->suffix = "macho";
+        write_to_disk(s, needle, file_size, buf, c_offset + f_offset);
+        return buf + file_size;
+    }
+
+    // 64-bit Mach-O magic (LE form) = 0xCFFAEDFE
+    if (magic_le == 0xCFFAEDFE) {
+        // Need at least a full 64-bit mach_header_64 (32 bytes)
+        if (buflen < 32) {
+            return foundat + needle->header_len;
+        }
+
+        uint32_t ncmds     = read_le32(&buf[16]);
+        uint32_t sizeofcmds= read_le32(&buf[20]);
+
+        if (32ULL + (uint64_t)sizeofcmds > buflen) {
+            return foundat + needle->header_len;
+        }
+
+        uint64_t lc_ptr = 32;
+        for (uint32_t i = 0; i < ncmds; i++) {
+            if (lc_ptr + 8 > buflen) {
+                break;
+            }
+            uint32_t cmd     = read_le32(&buf[lc_ptr + 0]);
+            uint32_t cmdsize = read_le32(&buf[lc_ptr + 4]);
+            if (cmdsize == 0 || (lc_ptr + cmdsize) > buflen) {
+                break;
+            }
+
+            if (cmd == 0x19 /* LC_SEGMENT_64 */) {
+                if (lc_ptr + 56 <= buflen) {
+                    uint64_t fileoff64  = read_le64(&buf[lc_ptr + 32]);
+                    uint64_t filesize64 = read_le64(&buf[lc_ptr + 40]);
+                    uint64_t this_end   = fileoff64 + filesize64;
+                    if (this_end > max_end) {
+                        max_end = this_end;
+                    }
+                }
+            }
+            lc_ptr += cmdsize;
+        }
+        if (max_end == 0) {
+            return foundat + needle->header_len;
+        }
+        file_size = (max_end > buflen ? buflen : max_end);
+        needle->suffix = "macho";
+        write_to_disk(s, needle, file_size, buf, c_offset + f_offset);
+        return buf + file_size;
+    }
+
+    return foundat + needle->header_len;
+}
+
+/**
+ * Extract Windows Event Log files.
+ */
+unsigned char *extract_evtx(f_state *s, uint64_t c_offset, unsigned char *foundat, uint64_t buflen,
+                            s_spec *needle, uint64_t f_offset) {
+    unsigned char *buf = foundat;
+    uint32_t chunk_count;
+    uint64_t full_size;
+    uint64_t carve_size;
+    unsigned char *next_hdr;
+    uint64_t search_len;
+
+    if (buflen < 0x1C) {
+        return foundat + needle->header_len;
+    }
+
+    // Verify "ElfFile\0\0"
+    if (memcmp(buf, "ElfFile\0\0", 8) != 0) {
+        return foundat + needle->header_len;
+    }
+
+    // Read chunk_count at offset 0x18
+    chunk_count = htoi(&buf[0x18], FOREMOST_LITTLE_ENDIAN);
+    if (chunk_count == 0) {
+        // Bad header -> skip header_len
+        return foundat + needle->header_len;
+    }
+
+    // Compute full_size = chunk_count x 65536; clamp if > buflen
+    if ((uint64_t)chunk_count > (buflen / 65536ULL)) {
+        full_size = buflen;
+    } else {
+        full_size = (uint64_t)chunk_count * 65536ULL;
+    }
+
+    if (full_size > 1) {
+        search_len = full_size - 1;
+        next_hdr = bm_search(
+            (unsigned char *)"ElfFile\0\0",
+            8,
+            buf + 1,
+            search_len,
+            needle->header_bm_table,
+            TRUE,
+            SEARCHTYPE_FORWARD
+        );
+
+        if (next_hdr) {
+            carve_size = (uint64_t)(next_hdr - buf);
+        } else {
+            carve_size = full_size;
+        }
+    } else {
+        carve_size = full_size;
+    }
+
+    needle->suffix = "evtx";
+    write_to_disk(s, needle, carve_size, buf, c_offset + f_offset);
+
+    return buf + carve_size;
+}
+
+/**
  * Dispatcher that calls the appropriate extract_*
  * function based on needle->type (JPEG, PNG, AVI, ZIP, OLE, etc.).
  */
@@ -2367,6 +2574,10 @@ unsigned char *extract_file(f_state *s, uint64_t c_offset, unsigned char *founda
         return extract_exe(s, c_offset, foundat, buflen, needle, f_offset);
     } else if (needle->type == ELF) {
         return extract_elf(s, c_offset, foundat, buflen, needle, f_offset);
+    } else if (needle->type == MACHO) {
+        return extract_macho(s, c_offset, foundat, buflen, needle, f_offset);
+    } else if (needle->type == EVTX) {
+        return extract_evtx(s, c_offset, foundat, buflen, needle, f_offset);
     } else if (needle->type == MOV || needle->type == VJPEG) {
         return extract_mov(s, c_offset, foundat, buflen, needle, f_offset);
     } else if (needle->type == CONF) {

@@ -360,3 +360,11 @@ uint32_t read_le32(unsigned char *buf) {
 uint64_t read_le64(unsigned char *buf) {
     return htoi(buf, FOREMOST_LITTLE_ENDIAN);
 }
+
+// --- Helper to read a 32-bit BE integer (for FAT headers) ---
+uint32_t read_be32(unsigned char *buf) {
+    return ((uint32_t)buf[0] << 24) |
+           ((uint32_t)buf[1] << 16) |
+           ((uint32_t)buf[2] << 8) |
+           ((uint32_t)buf[3]);
+}

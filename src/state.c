@@ -369,6 +369,18 @@ void init_all(f_state *state) {
     init_builtin(state, ELF, "elf", "\x7F\x45\x4C\x46",
                  NULL, 4, 0, 50 * MEGABYTE, TRUE);
 
+    init_builtin(state, MACHO, "macho", "\xCA\xFE\xBA\xBE",
+                 NULL, 4, 0, 10 * MEGABYTE, TRUE);
+
+    init_builtin(state, MACHO, "macho", "\xCE\xFA\xED\xFE",
+                 NULL, 4, 0, 10 * MEGABYTE, TRUE);
+
+    init_builtin(state, MACHO, "macho", "\xCF\xFA\xED\xFE",
+                 NULL, 4, 0, 10 * MEGABYTE, TRUE);
+
+    init_builtin(state, EVTX, "evtx", "ElfFile\0\0",
+                 NULL, 8, 0, 100 * MEGABYTE, TRUE);
+
     index = init_builtin(state, PNG, "png",
                          "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A",
                          "IEND", 8, 4, 1 * MEGABYTE, TRUE);
@@ -654,6 +666,29 @@ int set_search_def(f_state *s, char *ft, uint64_t max_file_size) {
         index = init_builtin(s, CPP, "cpp", "#include", "char",
                              8, 4, max_file_size, TRUE);
         add_marker(s, index, "int", 3);
+    } else if (strcmp(ft, "macho") == 0) {
+        if (max_file_size == 0) {
+            max_file_size = 10 * MEGABYTE;
+        }
+
+        // FAT Mach-O
+        init_builtin(s, MACHO, "macho", "\xCA\xFE\xBA\xBE",
+                     NULL, 4, 0, max_file_size, TRUE);
+
+        // 32-bit Mach-O LE
+        init_builtin(s, MACHO, "macho", "\xCE\xFA\xED\xFE",
+                     NULL, 4, 0, max_file_size, TRUE);
+
+        // 64-bit Mach-O LE
+        init_builtin(s, MACHO, "macho", "\xCF\xFA\xED\xFE",
+                     NULL, 4, 0, max_file_size, TRUE);
+    } else if (strcmp(ft, "evtx") == 0) {
+        if (max_file_size == 0) {
+            max_file_size = 100 * MEGABYTE;
+        }
+
+        init_builtin(s, EVTX, "evtx", "ElfFile\0\0", NULL,
+                     8, 0, max_file_size, TRUE);
     } else if (strcmp(ft, "png") == 0) {
         if (max_file_size == 0) {
             max_file_size = 1 * MEGABYTE;

@@ -196,6 +196,8 @@ extern char *__progname;
 #define XLSX     30
 #define PPTX     31
 #define MP4      32
+#define MACHO    33
+#define EVTX     34
 
 // Data size units
 #define KILOBYTE      1024
@@ -354,6 +356,7 @@ unsigned char *bm_search_skipn(unsigned char *needle, size_t needle_len, unsigne
 uint16_t read_le16(unsigned char *buf);
 uint32_t read_le32(unsigned char *buf);
 uint64_t read_le64(unsigned char *buf);
+uint32_t read_be32(unsigned char *buf);
 
 #endif /* __FOREMOST_H */
 
