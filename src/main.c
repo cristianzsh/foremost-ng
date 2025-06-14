@@ -93,7 +93,7 @@ void usage(void) {
     fprintf(stderr, ANSI_BOLD ANSI_CYAN "%s version %s by %s.%s" ANSI_RESET,
             __progname, VERSION, AUTHOR, NEWLINE);
     fprintf(stderr, ANSI_YELLOW
-            "%s %s [-v|-V|-h|-T|-Q|-q|-a|-w|-d|-x] [-t <type>] [-s <blocks>] [-k <size>]\n"
+            "%s %s [-v|-V|-h|-T|-Q|-q|-a|-w|-d|-x] [-t <type>] [-s <blocks>] [-k <size>]" "\n"
             "\t[-b <size>] [-c <file>] [-o <dir>] [-i <file>] <input files...>%s%s" ANSI_RESET,
             CMD_PROMPT, __progname, NEWLINE, NEWLINE);
     fprintf(stderr, ANSI_GREEN "Options:\n" ANSI_RESET);
@@ -136,7 +136,6 @@ void process_command_line(int argc, char **argv, f_state *s) {
             case 'i': set_input_file(s, optarg); break;
             case 'T': s->time_stamp = TRUE; break;
             case 't':
-                // Parse multiple file types separated by commas
                 ptr1 = ptr2 = optarg;
                 while (1) {
                     if (!*ptr2) {
@@ -148,12 +147,10 @@ void process_command_line(int argc, char **argv, f_state *s) {
                     }
                     if (*ptr2 == ',') {
                         *ptr2 = '\0';
-
                         if (!set_search_def(s, ptr1, 0)) {
                             usage();
                             exit(EXIT_SUCCESS);
                         }
-
                         *ptr2++ = ',';
                         ptr1 = ptr2;
                     } else {
@@ -230,12 +227,28 @@ int main(int argc, char **argv) {
         set_search_def(s, "all", 0);
     }
 
-    // First pass: count valid input files (non-option arguments start at optind)
-    for (i = optind; i < argc; i++) {
-        if (is_valid_input(argv[i])) {
-            input_files++;
+    // Determine explicit single-file input (-i) vs positional args
+    char *explicit_input = s->input_file;
+
+    if (explicit_input) {
+        if (is_valid_input(explicit_input)) {
+            input_files = 1;
         } else {
-            fprintf(stderr, ANSI_RED "[!] File not found or is a directory: %s\n" ANSI_RESET, argv[i]);
+            fprintf(stderr, ANSI_RED "[!] File not found or is a directory: %s\n" ANSI_RESET,
+                    explicit_input);
+        }
+    } else {
+        for (i = optind; i < argc; i++) {
+            char *arg = argv[i];
+            if (arg[0] == '-') {
+                fprintf(stderr, ANSI_YELLOW "[!] Ignoring parameter: %s\n" ANSI_RESET, arg);
+                continue;
+            }
+            if (is_valid_input(arg)) {
+                input_files++;
+            } else {
+                fprintf(stderr, ANSI_RED "[!] File not found or is a directory: %s\n" ANSI_RESET, arg);
+            }
         }
     }
 
@@ -258,15 +271,23 @@ int main(int argc, char **argv) {
         fatal_error(s, "Can't open audit file");
     }
 
-    if (input_files > 1) {
+    // Enable multi-file mode only if we have more than one positional file
+    if (!explicit_input && input_files > 1) {
         set_mode(s, mode_multi_file);
     }
 
-    // Second pass: process each valid input file
-    for (i = optind; i < argc; i++) {
-        if (is_valid_input(argv[i])) {
-            set_input_file(s, argv[i]);
-            process_file(s);
+    // Process files
+    if (explicit_input) {
+        set_input_file(s, explicit_input);
+        process_file(s);
+    } else {
+        for (i = optind; i < argc; i++) {
+            char *arg = argv[i];
+            if (arg[0] == '-') continue;
+            if (is_valid_input(arg)) {
+                set_input_file(s, arg);
+                process_file(s);
+            }
         }
     }
 
